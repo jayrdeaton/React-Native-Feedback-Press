@@ -11,10 +11,14 @@ export { TouchableHighlight, type TouchableHighlightProps } from './components/n
 export { TouchableOpacity, type TouchableOpacityProps } from './components/native/TouchableOpacity'
 
 // Paper wrappers (requires react-native-paper peer dep)
+export { AppbarAction, type AppbarActionProps } from './components/paper/AppbarAction'
 export { AppbarBackAction, type AppbarBackActionProps } from './components/paper/AppbarBackAction'
 export { Button, type ButtonProps } from './components/paper/Button'
 export { Card, type CardProps } from './components/paper/Card'
+export { Checkbox, type CheckboxProps } from './components/paper/Checkbox'
 export { Chip, type ChipProps } from './components/paper/Chip'
 export { FAB, type FABProps } from './components/paper/FAB'
 export { IconButton, type IconButtonProps } from './components/paper/IconButton'
+export { SegmentedButtons, type SegmentedButtonsProps } from './components/paper/SegmentedButtons'
+export { Switch, type SwitchProps } from './components/paper/Switch'
 export { TouchableRipple, type TouchableRippleProps } from './components/paper/TouchableRipple'

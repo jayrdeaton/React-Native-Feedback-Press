@@ -24,8 +24,12 @@ type PaperModuleShape = {
   Chip: PaperPressable
   TouchableRipple: PaperPressable
   FAB: PaperPressable
+  Checkbox: PaperPressable
+  Switch: PaperPressable
+  SegmentedButtons: PaperPressable
   Appbar: {
     BackAction: PaperPressable
+    Action: PaperPressable
   }
   Card: PaperPressable & {
     Content: ComponentType<{ [prop: string]: unknown }>

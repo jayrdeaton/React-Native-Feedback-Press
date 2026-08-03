@@ -96,7 +96,11 @@ All components are drop-in replacements with identical prop types to their origi
 | `Card` | `onPressIn` | `onLongPress` has no event arg (Paper) |
 | `Chip` | `onPressIn` | `onLongPress` has no event arg (Paper) |
 | `AppbarBackAction` | `onPress` | Paper doesn't expose `onPressIn` |
+| `AppbarAction` | `onPress` | Paper doesn't expose `onPressIn` |
 | `FAB` | `onPress` | Paper doesn't expose `onPressIn` |
+| `Checkbox` | `onPress` | Paper doesn't expose `onPressIn` |
+| `Switch` | `onValueChange` | Value-driven, no `onPress`/`onPressIn` |
+| `SegmentedButtons` | `onValueChange` | Value-driven, no `onPress`/`onPressIn` |
 
 `Card` re-exports its subcomponents: `Card.Content`, `Card.Title`, `Card.Actions`, `Card.Cover`.
 
