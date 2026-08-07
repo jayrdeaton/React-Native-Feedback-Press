@@ -1,40 +1,28 @@
-import { type GestureResponderEvent } from 'react-native'
+import { Pressable, Text } from 'react-native'
 
-import { requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { type ButtonProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
+import { fallbackStyles } from './fallbackStyles'
 
-// Local mirror of react-native-paper's Button props, limited to what this wrapper touches
-// plus a pass-through index signature — see src/paper.ts's PaperModuleShape for the same
-// pattern. This intentionally avoids `import type { ButtonProps } from 'react-native-paper'`,
-// which forces TypeScript to resolve the peer's real type declarations even for consumers
-// who never installed the optional "react-native-paper" peer dep.
-export type ButtonProps = {
-  mode?: 'text' | 'outlined' | 'contained' | 'elevated' | 'contained-tonal'
-  onPress?: (e: GestureResponderEvent) => void
-  onPressIn?: (e: GestureResponderEvent) => void
-  onLongPress?: (e: GestureResponderEvent) => void
-  [prop: string]: unknown
-}
+export type { ButtonProps }
 
-export const Button = ({ onPress, onLongPress, onPressIn, ...props }: ButtonProps) => {
-  const { Button: PaperButton } = requirePaper('Button')
-  const { selection, notification } = useVibration()
+export const Button = (props: ButtonProps) => {
+  const paper = useHapticPressPaper()
+  const { children, mode, ...wired } = useHapticHandlers(props)
 
-  const isInteractive = !!(onPress || onLongPress)
+  if (paper)
+    return (
+      <paper.Button {...wired} mode={mode}>
+        {children}
+      </paper.Button>
+    )
 
-  const handlePressIn: typeof onPressIn = isInteractive
-    ? (e: GestureResponderEvent) => {
-        selection()
-        onPressIn?.(e)
-      }
-    : onPressIn
-
-  const handleLongPress: typeof onLongPress = onLongPress
-    ? (e: GestureResponderEvent) => {
-        notification()
-        onLongPress(e)
-      }
-    : undefined
-
-  return <PaperButton {...props} onPress={onPress} onPressIn={handlePressIn} onLongPress={handleLongPress} />
+  // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Consumers
+  // who want the real look pass `paper` to <HapticPressProvider>.
+  const disabled = typeof wired.disabled === 'boolean' ? wired.disabled : false
+  return (
+    <Pressable disabled={disabled} onLongPress={wired.onLongPress} onPress={wired.onPress} onPressIn={wired.onPressIn} style={[fallbackStyles.button, (mode === 'outlined' || mode === 'text') && fallbackStyles.buttonOutlined, disabled && fallbackStyles.disabled]}>
+      <Text style={fallbackStyles.buttonText}>{children}</Text>
+    </Pressable>
+  )
 }

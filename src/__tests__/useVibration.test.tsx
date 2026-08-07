@@ -22,7 +22,7 @@ beforeEach(() => {
   Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true })
 })
 
-describe('useVibration — iOS', () => {
+describe('useVibration (iOS)', () => {
   it('selection() calls selectionAsync', () => {
     const { result } = renderHook(() => useVibration(), { wrapper })
     act(() => { result.current.selection() })
@@ -70,7 +70,7 @@ describe('useVibration — iOS', () => {
   })
 })
 
-describe('useVibration — Android', () => {
+describe('useVibration (Android)', () => {
   beforeEach(() => {
     Object.defineProperty(Platform, 'OS', { value: 'android', configurable: true })
   })
@@ -90,7 +90,7 @@ describe('useVibration — Android', () => {
   })
 })
 
-describe('useVibration — disabled', () => {
+describe('useVibration (disabled)', () => {
   it('selection() does nothing when disabled', () => {
     const { result } = renderHook(() => useVibration(), { wrapper: disabledWrapper })
     act(() => { result.current.selection() })
@@ -116,7 +116,7 @@ describe('useVibration — disabled', () => {
   })
 })
 
-describe('useVibration — force methods', () => {
+describe('useVibration (force methods)', () => {
   it('forceShort() fires even when disabled', () => {
     const { result } = renderHook(() => useVibration(), { wrapper: disabledWrapper })
     act(() => { result.current.forceShort() })

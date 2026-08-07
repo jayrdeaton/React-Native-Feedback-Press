@@ -6,8 +6,12 @@ import React from 'react'
 
 import { HapticPressProvider } from '../HapticPressProvider'
 import { Button, IconButton, TouchableRipple, Card, AppbarAction, AppbarBackAction, Chip, FAB, Checkbox, Switch, SegmentedButtons } from '../index'
+import type { PaperModuleShape } from '../PaperContext'
 
 const mockedHaptics = haptics as jest.Mocked<typeof haptics>
+// react-native-paper is no longer auto-detected via require() - it must be injected via
+// <HapticPressProvider paper={...}>. Pass the same mocked module the assertions below inspect.
+const mockPaper = Paper as unknown as PaperModuleShape
 
 // Double-cast needed because TS sees the real Paper types, not the jest.fn() mocks
 const MockButton = Paper.Button as unknown as jest.Mock
@@ -25,11 +29,15 @@ const MockSegmentedButtons = Paper.SegmentedButtons as unknown as jest.Mock
 const mockEvent = {} as any
 
 const enabled = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: true }}>{children}</HapticPressProvider>
+  <HapticPressProvider initialValue={{ vibrate: true }} paper={mockPaper}>
+    {children}
+  </HapticPressProvider>
 )
 
 const disabled = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: false }}>{children}</HapticPressProvider>
+  <HapticPressProvider initialValue={{ vibrate: false }} paper={mockPaper}>
+    {children}
+  </HapticPressProvider>
 )
 
 beforeEach(() => {
@@ -60,7 +68,7 @@ describe('Button', () => {
     expect(onPressIn).toHaveBeenCalledWith(mockEvent)
   })
 
-  it('passes onPress through unchanged — no haptic on press', () => {
+  it('passes onPress through unchanged: no haptic on press', () => {
     const onPress = jest.fn()
     render(<Button onPress={onPress}>{null}</Button>, { wrapper: enabled })
     lastProps(MockButton).onPress(mockEvent)
@@ -132,7 +140,7 @@ describe('AppbarBackAction', () => {
 })
 
 describe('AppbarAction', () => {
-  it('fires selection on onPress (no onPressIn — same as AppbarBackAction, its own underlying implementation)', () => {
+  it('fires selection on onPress (no onPressIn: same as AppbarBackAction, its own underlying implementation)', () => {
     const onPress = jest.fn()
     render(<AppbarAction icon="menu" onPress={onPress} />, { wrapper: enabled })
     lastProps(MockAction).onPress()
@@ -189,7 +197,7 @@ describe('Checkbox', () => {
 })
 
 describe('Switch', () => {
-  it('fires selection on onValueChange (no onPress/onPressIn — Switch is value-driven, not press-driven)', () => {
+  it('fires selection on onValueChange (no onPress/onPressIn: Switch is value-driven, not press-driven)', () => {
     const onValueChange = jest.fn()
     render(<Switch value={false} onValueChange={onValueChange} />, { wrapper: enabled })
     lastProps(MockSwitch).onValueChange(true)
@@ -205,7 +213,7 @@ describe('Switch', () => {
 })
 
 describe('SegmentedButtons', () => {
-  it('fires selection on onValueChange (no onPress/onPressIn — each internal button is a private Paper implementation detail)', () => {
+  it('fires selection on onValueChange (no onPress/onPressIn: each internal button is a private Paper implementation detail)', () => {
     const onValueChange = jest.fn()
     render(<SegmentedButtons value="a" onValueChange={onValueChange} buttons={[]} />, { wrapper: enabled })
     lastProps(MockSegmentedButtons).onValueChange('b')

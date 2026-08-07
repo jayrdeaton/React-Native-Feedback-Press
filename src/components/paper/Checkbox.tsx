@@ -1,31 +1,24 @@
-import { type GestureResponderEvent } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
 
-import { requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { type CheckboxProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
+import { fallbackStyles } from './fallbackStyles'
 
-// Local mirror of react-native-paper's Checkbox props, limited to what this wrapper touches
-// plus a pass-through index signature — see src/paper.ts's PaperModuleShape for the same
-// pattern. This intentionally avoids `import type { Props } from 'react-native-paper'`,
-// which forces TypeScript to resolve the peer's real type declarations even for consumers
-// who never installed the optional "react-native-paper" peer dep.
-export type CheckboxProps = {
-  status: 'checked' | 'unchecked' | 'indeterminate'
-  onPress?: (e: GestureResponderEvent) => void
-  [prop: string]: unknown
-}
+export type { CheckboxProps }
 
-// Fires on onPress — Paper's Checkbox doesn't declare an onPressIn of its own (unlike
-// Button/IconButton/TouchableRipple), so the haptic lands on release rather than touch-down.
-export const Checkbox = ({ onPress, ...props }: CheckboxProps) => {
-  const { Checkbox: PaperCheckbox } = requirePaper('Checkbox')
-  const { selection } = useVibration()
+export const Checkbox = (props: CheckboxProps) => {
+  const paper = useHapticPressPaper()
+  const { status, ...wired } = useHapticHandlers(props, { onPress: 'selection' })
 
-  const handlePress = onPress
-    ? (e: GestureResponderEvent) => {
-        selection()
-        onPress(e)
-      }
-    : undefined
+  if (paper) return <paper.Checkbox {...wired} status={status} />
 
-  return <PaperCheckbox {...props} onPress={handlePress} />
+  // No `paper` injected: plain-RN fallback, not a Material Design reproduction.
+  return (
+    <Pressable onPress={wired.onPress}>
+      <View style={fallbackStyles.checkboxBox}>
+        {status === 'checked' ? <Text style={fallbackStyles.checkboxMark}>✓</Text> : null}
+        {status === 'indeterminate' ? <Text style={fallbackStyles.checkboxMark}>–</Text> : null}
+      </View>
+    </Pressable>
+  )
 }

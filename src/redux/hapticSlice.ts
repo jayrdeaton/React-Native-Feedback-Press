@@ -1,6 +1,6 @@
 import { defaultHapticSettings, type HapticSettings } from '../HapticSettingsContext'
 
-// Hand-rolled slice — no @reduxjs/toolkit dependency. Action types and creator
+// Hand-rolled slice: no @reduxjs/toolkit dependency. Action types and creator
 // behavior match the previous createSlice implementation exactly, so this works
 // with RTK stores, vanilla Redux, or any reducer-based state container.
 type PayloadAction<P> = { payload: P; type: string }

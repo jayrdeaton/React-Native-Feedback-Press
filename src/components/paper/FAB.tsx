@@ -1,40 +1,24 @@
-import { type GestureResponderEvent } from 'react-native'
+import { Pressable } from 'react-native'
 
-import { requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { type FABProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
+import { fallbackStyles } from './fallbackStyles'
+import { renderFallbackIcon } from './renderFallbackIcon'
 
-// Local mirror of react-native-paper's FAB props, limited to what this wrapper touches
-// plus a pass-through index signature — see src/paper.ts's PaperModuleShape for the same
-// pattern. This intentionally avoids `import type { FABProps } from 'react-native-paper'`,
-// which forces TypeScript to resolve the peer's real type declarations even for consumers
-// who never installed the optional "react-native-paper" peer dep.
-export type FABProps = {
-  mode?: 'flat' | 'elevated'
-  onPress?: (e: GestureResponderEvent) => void
-  onLongPress?: (e: GestureResponderEvent) => void
-  size?: 'small' | 'medium' | 'large'
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'surface'
-  [prop: string]: unknown
-}
+export type { FABProps }
 
-// FAB does not expose onPressIn — haptic fires on onPress instead
-export const FAB = ({ onPress, onLongPress, ...props }: FABProps) => {
-  const { FAB: PaperFAB } = requirePaper('FAB')
-  const { selection, notification } = useVibration()
+// FAB does not expose onPressIn, so the haptic fires on onPress instead
+export const FAB = (props: FABProps) => {
+  const paper = useHapticPressPaper()
+  const { icon, size, ...wired } = useHapticHandlers(props, { onLongPress: 'notification', onPress: 'selection' })
 
-  const handlePress: typeof onPress = onPress
-    ? (e: GestureResponderEvent) => {
-        selection()
-        onPress(e)
-      }
-    : undefined
+  if (paper) return <paper.FAB {...wired} icon={icon} size={size} />
 
-  const handleLongPress: typeof onLongPress = onLongPress
-    ? (e: GestureResponderEvent) => {
-        notification()
-        onLongPress(e)
-      }
-    : undefined
-
-  return <PaperFAB {...props} onPress={handlePress} onLongPress={handleLongPress} />
+  // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Consumers
+  // who want the real look pass `paper` to <HapticPressProvider>.
+  return (
+    <Pressable onLongPress={wired.onLongPress} onPress={wired.onPress} style={[fallbackStyles.fab, size === 'small' && fallbackStyles.fabSmall]}>
+      {renderFallbackIcon(icon, '#ffffff', 24)}
+    </Pressable>
+  )
 }

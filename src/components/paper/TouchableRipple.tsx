@@ -1,40 +1,23 @@
-import { type GestureResponderEvent } from 'react-native'
+import { Pressable } from 'react-native'
 
-import { requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { type TouchableRippleProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
+import { fallbackColors } from './fallbackStyles'
 
-// Local mirror of react-native-paper's TouchableRipple props, limited to what this
-// wrapper touches plus a pass-through index signature — see src/paper.ts's
-// PaperModuleShape for the same pattern. This intentionally avoids `import type {
-// TouchableRippleProps } from 'react-native-paper'`, which forces TypeScript to resolve
-// the peer's real type declarations even for consumers who never installed the optional
-// "react-native-paper" peer dep.
-export type TouchableRippleProps = {
-  onPress?: (e: GestureResponderEvent) => void
-  onPressIn?: (e: GestureResponderEvent) => void
-  onLongPress?: (e: GestureResponderEvent) => void
-  [prop: string]: unknown
-}
+export type { TouchableRippleProps }
 
-export const TouchableRipple = ({ onPress, onLongPress, onPressIn, ...props }: TouchableRippleProps) => {
-  const { TouchableRipple: PaperTouchableRipple } = requirePaper('TouchableRipple')
-  const { selection, notification } = useVibration()
+export const TouchableRipple = (props: TouchableRippleProps) => {
+  const paper = useHapticPressPaper()
+  const { children, ...wired } = useHapticHandlers(props)
 
-  const isInteractive = !!(onPress || onLongPress)
+  if (paper) return <paper.TouchableRipple {...wired}>{children}</paper.TouchableRipple>
 
-  const handlePressIn: typeof onPressIn = isInteractive
-    ? (e: GestureResponderEvent) => {
-        selection()
-        onPressIn?.(e)
-      }
-    : onPressIn
-
-  const handleLongPress: typeof onLongPress = onLongPress
-    ? (e: GestureResponderEvent) => {
-        notification()
-        onLongPress(e)
-      }
-    : undefined
-
-  return <PaperTouchableRipple {...props} onPress={onPress} onPressIn={handlePressIn} onLongPress={handleLongPress} />
+  // No `paper` injected: plain-RN fallback, not a Material Design reproduction.
+  // TouchableRipple doesn't impose its own visual style in Paper either, so there's no
+  // wrapper style here, just a real ripple on Android via android_ripple.
+  return (
+    <Pressable android_ripple={{ color: fallbackColors.tint }} onLongPress={wired.onLongPress} onPress={wired.onPress} onPressIn={wired.onPressIn}>
+      {children}
+    </Pressable>
+  )
 }

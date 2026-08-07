@@ -1,32 +1,30 @@
-import { requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { Pressable, Text, View } from 'react-native'
 
-// Local mirror of react-native-paper's SegmentedButtons props, limited to what this wrapper
-// touches plus a pass-through index signature — see src/paper.ts's PaperModuleShape for the
-// same pattern. This intentionally avoids `import type { Props } from 'react-native-paper'`,
-// which forces TypeScript to resolve the peer's real type declarations even for consumers
-// who never installed the optional "react-native-paper" peer dep. onValueChange is typed as
-// accepting either shape Paper's own single-select/multi-select discriminated union
-// produces, rather than mirroring that full union — same simplification tradeoff Card.tsx's
-// onLongPress takes.
-export type SegmentedButtonsProps = {
-  onValueChange?: (value: string | string[]) => void
-  [prop: string]: unknown
-}
+import { type SegmentedButtonsProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
+import { fallbackStyles } from './fallbackStyles'
 
-// SegmentedButtons has no onPress/onPressIn of its own — each internal button is Paper's own
-// private implementation detail — so the haptic fires the moment the selected value actually
-// changes, on onValueChange.
-export const SegmentedButtons = ({ onValueChange, ...props }: SegmentedButtonsProps) => {
-  const { SegmentedButtons: PaperSegmentedButtons } = requirePaper('SegmentedButtons')
-  const { selection } = useVibration()
+export type { SegmentedButtonsProps }
 
-  const handleValueChange = onValueChange
-    ? (value: string | string[]) => {
-        selection()
-        onValueChange(value)
-      }
-    : undefined
+export const SegmentedButtons = (props: SegmentedButtonsProps) => {
+  const paper = useHapticPressPaper()
+  const wired = useHapticHandlers(props, { onValueChange: 'selection' })
 
-  return <PaperSegmentedButtons {...props} onValueChange={handleValueChange} />
+  if (paper) return <paper.SegmentedButtons {...wired} />
+
+  // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Single-select
+  // behavior only in this fallback, since we can't detect Paper's multi-select mode without Paper.
+  const { buttons, value } = wired
+  return (
+    <View style={fallbackStyles.segmentedRow}>
+      {buttons.map((button) => {
+        const selected = Array.isArray(value) ? value.includes(button.value) : value === button.value
+        return (
+          <Pressable disabled={button.disabled} key={button.value} onPress={() => wired.onValueChange?.(button.value)} style={[fallbackStyles.segment, selected && fallbackStyles.segmentSelected, button.disabled && fallbackStyles.disabled]}>
+            <Text style={[fallbackStyles.segmentText, selected && fallbackStyles.segmentTextSelected]}>{button.label}</Text>
+          </Pressable>
+        )
+      })}
+    </View>
+  )
 }

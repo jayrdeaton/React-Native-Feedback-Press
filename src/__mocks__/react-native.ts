@@ -20,7 +20,9 @@ export { Platform, StyleSheet, Vibration }
 
 export const View = stub
 export const Text = stub
+export const Image = jest.fn(stub)
 export const Pressable = jest.fn(stub)
+export const Switch = jest.fn(stub)
 export const TouchableOpacity = jest.fn(stub)
 export const TouchableHighlight = jest.fn(stub)
 export const TouchableNativeFeedback = stub

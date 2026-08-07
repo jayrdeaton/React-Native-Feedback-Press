@@ -1,42 +1,27 @@
-import { type GestureResponderEvent } from 'react-native'
+import { Pressable, Text } from 'react-native'
 
-import { requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { type ChipProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
+import { fallbackStyles } from './fallbackStyles'
 
-// Local mirror of react-native-paper's Chip props, limited to what this wrapper touches
-// plus a pass-through index signature — see src/paper.ts's PaperModuleShape for the same
-// pattern. This intentionally avoids `import type { ChipProps } from 'react-native-paper'`,
-// which forces TypeScript to resolve the peer's real type declarations even for consumers
-// who never installed the optional "react-native-paper" peer dep.
-export type ChipProps = {
-  mode?: 'flat' | 'outlined'
-  onPress?: (e: GestureResponderEvent) => void
-  onPressIn?: (e: GestureResponderEvent) => void
-  // Paper's Chip.onLongPress is () => void (no event arg)
-  onLongPress?: () => void
-  [prop: string]: unknown
-}
+export type { ChipProps }
 
-export const Chip = ({ onPress, onLongPress, onPressIn, ...props }: ChipProps) => {
-  const { Chip: PaperChip } = requirePaper('Chip')
-  const { selection, notification } = useVibration()
+export const Chip = (props: ChipProps) => {
+  const paper = useHapticPressPaper()
+  const { children, mode, ...wired } = useHapticHandlers(props)
 
-  const isInteractive = !!(onPress || onLongPress)
+  if (paper)
+    return (
+      <paper.Chip {...wired} mode={mode}>
+        {children}
+      </paper.Chip>
+    )
 
-  const handlePressIn: typeof onPressIn = isInteractive
-    ? (e: GestureResponderEvent) => {
-        selection()
-        onPressIn?.(e)
-      }
-    : onPressIn
-
-  // Paper Chip.onLongPress is () => void (no event arg)
-  const handleLongPress: typeof onLongPress = onLongPress
-    ? () => {
-        notification()
-        onLongPress()
-      }
-    : undefined
-
-  return <PaperChip {...props} onPress={onPress} onPressIn={handlePressIn} onLongPress={handleLongPress} />
+  // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Consumers
+  // who want the real look pass `paper` to <HapticPressProvider>.
+  return (
+    <Pressable onLongPress={wired.onLongPress} onPress={wired.onPress} onPressIn={wired.onPressIn} style={[fallbackStyles.chip, mode === 'outlined' && fallbackStyles.chipOutlined]}>
+      <Text style={fallbackStyles.chipText}>{children}</Text>
+    </Pressable>
+  )
 }

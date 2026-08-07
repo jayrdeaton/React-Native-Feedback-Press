@@ -1,29 +1,19 @@
-import { requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { Switch as RNSwitch } from 'react-native'
 
-// Local mirror of react-native-paper's Switch props, limited to what this wrapper touches
-// plus a pass-through index signature — see src/paper.ts's PaperModuleShape for the same
-// pattern. This intentionally avoids `import type { Props } from 'react-native-paper'`,
-// which forces TypeScript to resolve the peer's real type declarations even for consumers
-// who never installed the optional "react-native-paper" peer dep.
-export type SwitchProps = {
-  value?: boolean
-  onValueChange?: (value: boolean) => void
-  [prop: string]: unknown
-}
+import { type SwitchProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
 
-// Switch has no onPress/onPressIn at all — just a value-change callback — so the haptic
+export type { SwitchProps }
+
+// Switch has no onPress/onPressIn at all, just a value-change callback, so the haptic
 // fires the moment the toggle actually flips, on onValueChange.
-export const Switch = ({ onValueChange, ...props }: SwitchProps) => {
-  const { Switch: PaperSwitch } = requirePaper('Switch')
-  const { selection } = useVibration()
+export const Switch = (props: SwitchProps) => {
+  const paper = useHapticPressPaper()
+  const wired = useHapticHandlers(props, { onValueChange: 'selection' })
 
-  const handleValueChange = onValueChange
-    ? (value: boolean) => {
-        selection()
-        onValueChange(value)
-      }
-    : undefined
+  if (paper) return <paper.Switch {...wired} />
 
-  return <PaperSwitch {...props} onValueChange={handleValueChange} />
+  // No `paper` injected: plain-RN fallback. RN's own Switch is a fully-functional native
+  // control already, so it needs no extra styling.
+  return <RNSwitch onValueChange={wired.onValueChange} value={wired.value} />
 }

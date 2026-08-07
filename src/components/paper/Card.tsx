@@ -1,71 +1,69 @@
-import type { ComponentType } from 'react'
-import { type GestureResponderEvent } from 'react-native'
+import { Image, Pressable, Text, View } from 'react-native'
 
-import { paper, requirePaper } from '../../paper'
-import { useVibration } from '../../useVibration'
+import { type CardActionsProps, type CardContentProps, type CardCoverProps, type CardProps, type CardTitleProps, useHapticPressPaper } from '../../PaperContext'
+import { useHapticHandlers } from '../../useHapticHandlers'
+import { fallbackStyles } from './fallbackStyles'
 
-// Local mirror of react-native-paper's Card props, limited to what this wrapper touches
-// plus a pass-through index signature — see src/paper.ts's PaperModuleShape for the same
-// pattern. This intentionally avoids `import type { CardProps } from 'react-native-paper'`,
-// which forces TypeScript to resolve the peer's real type declarations even for consumers
-// who never installed the optional "react-native-paper" peer dep.
-export type CardProps = {
-  // Paper's real type discriminates 'outlined' as required-with-mode vs optional for
-  // 'elevated'/'contained' — simplified to a plain optional union here, same tradeoff
-  // as onLongPress below, to avoid mirroring the full discriminated-union shape.
-  mode?: 'outlined' | 'elevated' | 'contained'
-  onPress?: (e: GestureResponderEvent) => void
-  onPressIn?: (e: GestureResponderEvent) => void
-  // Paper's Card.onLongPress is () => void (no event arg)
-  onLongPress?: () => void
-  [prop: string]: unknown
-}
-
-// Local stand-in for react-native-paper's Card.Content/Title/Actions/Cover statics —
-// matches PaperModuleShape['Card'] in src/paper.ts.
-type PaperCardStatic = ComponentType<{ [prop: string]: unknown }>
+export type { CardProps }
 
 const CardComponent = (props: CardProps) => {
-  const { Card: PaperCard } = requirePaper('Card')
-  const { selection, notification } = useVibration()
-  const { onPress, onLongPress, onPressIn } = props
+  const paper = useHapticPressPaper()
+  const { children, mode, ...wired } = useHapticHandlers(props)
 
-  const isInteractive = !!(onPress || onLongPress)
+  if (paper)
+    return (
+      <paper.Card {...wired} mode={mode}>
+        {children}
+      </paper.Card>
+    )
 
-  const handlePressIn = isInteractive
-    ? (e: GestureResponderEvent) => {
-        selection()
-        onPressIn?.(e)
-      }
-    : onPressIn
-
-  // Paper Card.onLongPress is () => void (no event arg)
-  const handleLongPress = onLongPress
-    ? () => {
-        notification()
-        onLongPress()
-      }
-    : undefined
-
-  // Paper's Card union type requires a cast when spreading + overriding handlers
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return <PaperCard {...(props as any)} onPressIn={handlePressIn} onLongPress={handleLongPress} />
+  // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Only wraps
+  // in a Pressable when the card is actually interactive, same as every other wrapper here.
+  if (!(wired.onPress || wired.onLongPress)) return <View style={fallbackStyles.card}>{children}</View>
+  return (
+    <Pressable onLongPress={wired.onLongPress} onPress={wired.onPress} onPressIn={wired.onPressIn} style={fallbackStyles.card}>
+      {children}
+    </Pressable>
+  )
 }
 
-// Statics are only attached when react-native-paper is installed (optional peer)
-export const Card = Object.assign(
-  CardComponent,
-  paper
-    ? {
-        Content: paper.Card.Content,
-        Title: paper.Card.Title,
-        Actions: paper.Card.Actions,
-        Cover: paper.Card.Cover
-      }
-    : {}
-) as unknown as typeof CardComponent & {
-  Content: PaperCardStatic
-  Title: PaperCardStatic
-  Actions: PaperCardStatic
-  Cover: PaperCardStatic
+const CardContent = ({ children, ...rest }: CardContentProps) => {
+  const paper = useHapticPressPaper()
+  if (paper) return <paper.Card.Content {...rest}>{children}</paper.Card.Content>
+  return <View style={fallbackStyles.cardContent}>{children}</View>
 }
+CardContent.displayName = 'Card.Content'
+
+const CardTitle = (props: CardTitleProps) => {
+  const paper = useHapticPressPaper()
+  if (paper) return <paper.Card.Title {...props} />
+  const { subtitle, title } = props
+  return (
+    <View style={fallbackStyles.cardContent}>
+      {title != null ? <Text style={fallbackStyles.cardTitleText}>{title}</Text> : null}
+      {subtitle != null ? <Text style={fallbackStyles.chipText}>{subtitle}</Text> : null}
+    </View>
+  )
+}
+CardTitle.displayName = 'Card.Title'
+
+const CardActions = ({ children, ...rest }: CardActionsProps) => {
+  const paper = useHapticPressPaper()
+  if (paper) return <paper.Card.Actions {...rest}>{children}</paper.Card.Actions>
+  return <View style={fallbackStyles.cardActions}>{children}</View>
+}
+CardActions.displayName = 'Card.Actions'
+
+const CardCover = (props: CardCoverProps) => {
+  const paper = useHapticPressPaper()
+  if (paper) return <paper.Card.Cover {...props} />
+  return <Image source={props.source} style={fallbackStyles.cardCover} />
+}
+CardCover.displayName = 'Card.Cover'
+
+export const Card = Object.assign(CardComponent, {
+  Actions: CardActions,
+  Content: CardContent,
+  Cover: CardCover,
+  Title: CardTitle
+})
