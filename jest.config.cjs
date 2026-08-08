@@ -24,5 +24,6 @@ module.exports = {
     ]
   },
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.claude/worktrees/'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs']
 }

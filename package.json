@@ -27,7 +27,7 @@
   "type": "commonjs",
   "exports": {
     ".": {
-      "react-native": "./dist/index.mjs",
+      "react-native": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
@@ -35,7 +35,7 @@
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
-  "react-native": "dist/index.mjs",
+  "react-native": "src/index.ts",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -71,7 +71,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react-native": "^5.0.0",
     "eslint-plugin-simple-import-sort": "^13.0.0",
-    "expo-haptics": "*",
+    "expo-haptics": "^56.0.3",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "prettier": "^3.8.3",
@@ -86,8 +86,8 @@
     "typescript-eslint": "^8.59.3"
   },
   "peerDependencies": {
-    "expo-haptics": ">=13.0.0",
-    "react": ">=18.0.0",
+    "expo-haptics": ">=56.0.0",
+    "react": ">=19.0.0",
     "react-native": ">=0.76.0",
     "react-native-paper": ">=5.0.0"
   },
