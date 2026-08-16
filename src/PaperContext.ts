@@ -1,11 +1,13 @@
 import { type ComponentType, createContext, type ReactNode, useContext } from 'react'
 import type { GestureResponderEvent, ImageSourcePropType } from 'react-native'
 
+import type { SoundConfig } from './SoundContext'
+
 // Local mirrors of react-native-paper's component prop shapes, limited to what this
 // package's wrappers touch plus a pass-through index signature. This intentionally avoids
 // `typeof import('react-native-paper')`, which would force TypeScript to resolve the
 // peer's real type declarations even for consumers who never installed it. Paper is a
-// genuinely optional injection now (see `HapticPressProvider`'s `paper` prop), not a hard
+// genuinely optional injection now (see `FeedbackPressProvider`'s `paper` prop), not a hard
 // or auto-detected dependency, and every wrapper renders a working plain-RN fallback when
 // it's omitted rather than throwing.
 
@@ -17,6 +19,14 @@ export type ButtonProps = {
   onLongPress?: (e: GestureResponderEvent) => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   [prop: string]: unknown
 }
 
@@ -25,6 +35,14 @@ export type IconButtonProps = {
   onLongPress?: (e: GestureResponderEvent) => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   [prop: string]: unknown
 }
 
@@ -33,6 +51,14 @@ export type TouchableRippleProps = {
   onLongPress?: (e: GestureResponderEvent) => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   [prop: string]: unknown
 }
 
@@ -46,6 +72,14 @@ export type CardProps = {
   onLongPress?: () => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   [prop: string]: unknown
 }
 
@@ -70,6 +104,14 @@ export type ChipProps = {
   onLongPress?: () => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   [prop: string]: unknown
 }
 
@@ -80,6 +122,14 @@ export type FABProps = {
   // FAB does not expose onPressIn, so the haptic fires on onPress instead
   onPress?: (e: GestureResponderEvent) => void
   size?: 'large' | 'medium' | 'small'
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   variant?: 'primary' | 'secondary' | 'surface' | 'tertiary'
   [prop: string]: unknown
 }
@@ -88,6 +138,14 @@ export type CheckboxProps = {
   // Fires on onPress: Paper's Checkbox doesn't declare an onPressIn of its own (unlike
   // Button/IconButton/TouchableRipple), so the haptic lands on release rather than touch-down.
   onPress?: (e: GestureResponderEvent) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   status: 'checked' | 'indeterminate' | 'unchecked'
   [prop: string]: unknown
 }
@@ -96,6 +154,14 @@ export type SwitchProps = {
   // Switch has no onPress/onPressIn at all, just a value-change callback, so the haptic
   // fires the moment the toggle actually flips, on onValueChange.
   onValueChange?: (value: boolean) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   value?: boolean
   [prop: string]: unknown
 }
@@ -108,6 +174,14 @@ export type SegmentedButtonsProps = {
   // single-select/multi-select discriminated union produces, rather than mirroring that
   // full union, same simplification tradeoff Card/Chip's onLongPress takes.
   onValueChange?: (value: string | string[]) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   value: string | string[]
   [prop: string]: unknown
 }
@@ -118,12 +192,28 @@ export type AppbarActionProps = {
   // Appbar.BackAction is itself built on top of Appbar.Action internally in Paper's own
   // source (they share one underlying implementation).
   onPress?: () => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   [prop: string]: unknown
 }
 
 export type AppbarBackActionProps = {
   // Optional param so this wrapper can invoke `onPress()` without an event.
   onPress?: (e?: GestureResponderEvent) => void
+  // Opts this instance out of the provider's `sound` callback while keeping its haptic.
+  soundDisabled?: boolean
+  // Opts this instance out of haptics while keeping its sound - the independent counterpart to
+  // soundDisabled above.
+  hapticDisabled?: boolean
+  // Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct
+  // sound for one particular button, without needing a second provider.
+  sound?: SoundConfig
   [prop: string]: unknown
 }
 
@@ -158,9 +248,9 @@ export type PaperModuleShape = {
 // react-native-paper is no longer auto-detected via require() - Metro doesn't rewrite a
 // require()-in-try/catch call into its module graph inside an ESM (.mjs) build, so the
 // module-level auto-detection this package used to do silently broke as soon as consumers'
-// bundlers resolved this package's ESM entry point. <HapticPressProvider paper={...}> now
+// bundlers resolved this package's ESM entry point. <FeedbackPressProvider paper={...}> now
 // receives the already-imported module directly instead, and every wrapper renders a plain
 // bare-RN fallback rather than throwing when it's omitted.
 export const PaperContext = createContext<PaperModuleShape | null>(null)
 
-export const useHapticPressPaper = () => useContext(PaperContext)
+export const useFeedbackPressPaper = () => useContext(PaperContext)

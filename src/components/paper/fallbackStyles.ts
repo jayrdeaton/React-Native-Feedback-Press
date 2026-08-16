@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native'
 
 // Minimal, dependency-free styling used when `paper` isn't injected into
-// HapticPressProvider: functional, not a Material Design reproduction. Consumers who want
-// the real look inject `paper` (see PaperContext.ts / HapticPressProvider's `paper` prop).
+// FeedbackPressProvider: functional, not a Material Design reproduction. Consumers who want
+// the real look inject `paper` (see PaperContext.ts / FeedbackPressProvider's `paper` prop).
 export const fallbackColors = {
   background: '#e6e6e6',
   border: '#9e9e9e',

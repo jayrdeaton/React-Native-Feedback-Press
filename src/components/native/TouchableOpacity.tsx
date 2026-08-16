@@ -1,7 +1,7 @@
 import { TouchableOpacity as RNTouchableOpacity, type TouchableOpacityProps } from 'react-native'
 
-import { withHaptics } from '../../withHaptics'
+import { withFeedback } from '../../withFeedback'
 
 export type { TouchableOpacityProps }
 
-export const TouchableOpacity = withHaptics<TouchableOpacityProps>(RNTouchableOpacity)
+export const TouchableOpacity = withFeedback<TouchableOpacityProps>(RNTouchableOpacity)

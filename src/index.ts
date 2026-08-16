@@ -1,12 +1,13 @@
-export { HapticPressProvider, type HapticPressProviderProps } from './HapticPressProvider'
+export { FeedbackPressProvider, type FeedbackPressProviderProps } from './FeedbackPressProvider'
 export type { HapticSettings } from './HapticSettingsContext'
 export { defaultHapticSettings, HapticSettingsContext } from './HapticSettingsContext'
-export { type PaperModuleShape, useHapticPressPaper } from './PaperContext'
+export { type PaperModuleShape, useFeedbackPressPaper } from './PaperContext'
 export { hapticActions, hapticReducer } from './redux/hapticSlice'
-export { type HapticTrigger, type HapticWiring, type HapticWiringEntry, PRESS_WIRING, useHapticHandlers } from './useHapticHandlers'
+export { type SoundConfig, SoundContext } from './SoundContext'
+export { type FeedbackTrigger, type FeedbackWiring, type FeedbackWiringEntry, PRESS_WIRING, useFeedbackHandlers } from './useFeedbackHandlers'
 export { useHapticSettings } from './useHapticSettings'
 export { useVibration } from './useVibration'
-export { withHaptics } from './withHaptics'
+export { withFeedback } from './withFeedback'
 
 // Native wrappers
 export { Pressable, type PressableProps } from './components/native/Pressable'

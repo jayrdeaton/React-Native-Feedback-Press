@@ -1,13 +1,13 @@
 import { act, renderHook } from '@testing-library/react'
 import React from 'react'
 
-import { HapticPressProvider } from '../HapticPressProvider'
+import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { useHapticSettings } from '../useHapticSettings'
 
-describe('HapticPressProvider', () => {
+describe('FeedbackPressProvider', () => {
   it('provides vibrate: true by default', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <HapticPressProvider>{children}</HapticPressProvider>
+      <FeedbackPressProvider>{children}</FeedbackPressProvider>
     )
     const { result } = renderHook(() => useHapticSettings(), { wrapper })
     expect(result.current.settings.vibrate).toBe(true)
@@ -15,7 +15,7 @@ describe('HapticPressProvider', () => {
 
   it('applies initialValue prop as initial settings', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <HapticPressProvider initialValue={{ vibrate: false }}>{children}</HapticPressProvider>
+      <FeedbackPressProvider initialValue={{ vibrate: false }}>{children}</FeedbackPressProvider>
     )
     const { result } = renderHook(() => useHapticSettings(), { wrapper })
     expect(result.current.settings.vibrate).toBe(false)
@@ -23,7 +23,7 @@ describe('HapticPressProvider', () => {
 
   it('set updates settings in context', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <HapticPressProvider>{children}</HapticPressProvider>
+      <FeedbackPressProvider>{children}</FeedbackPressProvider>
     )
     const { result } = renderHook(() => useHapticSettings(), { wrapper })
     act(() => { result.current.set({ vibrate: false }) })
@@ -33,7 +33,7 @@ describe('HapticPressProvider', () => {
   it('calls onChange when settings are updated via set', () => {
     const onChange = jest.fn()
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <HapticPressProvider onChange={onChange}>{children}</HapticPressProvider>
+      <FeedbackPressProvider onChange={onChange}>{children}</FeedbackPressProvider>
     )
     const { result } = renderHook(() => useHapticSettings(), { wrapper })
     act(() => { result.current.set({ vibrate: false }) })
@@ -43,7 +43,7 @@ describe('HapticPressProvider', () => {
   it('does not call onChange on initial render', () => {
     const onChange = jest.fn()
     const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <HapticPressProvider onChange={onChange}>{children}</HapticPressProvider>
+      <FeedbackPressProvider onChange={onChange}>{children}</FeedbackPressProvider>
     )
     renderHook(() => useHapticSettings(), { wrapper })
     expect(onChange).not.toHaveBeenCalled()

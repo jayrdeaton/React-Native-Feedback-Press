@@ -3,13 +3,13 @@ import { Image as RNImage, Pressable as RNPressable, Switch as RNSwitch } from '
 import * as Paper from 'react-native-paper'
 import React from 'react'
 
-import { HapticPressProvider } from '../HapticPressProvider'
+import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { Button, Card, IconButton, SegmentedButtons, Switch } from '../index'
 import type { PaperModuleShape } from '../PaperContext'
 
 // react-native-paper is a genuinely optional injection - it's never auto-detected and never
 // required. Every Paper-flavored wrapper renders a real, working plain-RN fallback when
-// `paper` isn't passed to <HapticPressProvider>, instead of throwing. These tests cover both
+// `paper` isn't passed to <FeedbackPressProvider>, instead of throwing. These tests cover both
 // the fallback-when-omitted and resolves-through-when-injected paths for a representative
 // set of components (a simple press component, the trickiest structural one, and the two
 // components whose fallback isn't Pressable-based).
@@ -23,9 +23,9 @@ const MockPaperCard = Paper.Card as unknown as jest.Mock
 
 const lastProps = (mock: jest.Mock) => mock.mock.calls[mock.mock.calls.length - 1][0]
 
-const withPaper = ({ children }: { children: React.ReactNode }) => <HapticPressProvider paper={mockPaper}>{children}</HapticPressProvider>
+const withPaper = ({ children }: { children: React.ReactNode }) => <FeedbackPressProvider paper={mockPaper}>{children}</FeedbackPressProvider>
 
-const withoutPaper = ({ children }: { children: React.ReactNode }) => <HapticPressProvider>{children}</HapticPressProvider>
+const withoutPaper = ({ children }: { children: React.ReactNode }) => <FeedbackPressProvider>{children}</FeedbackPressProvider>
 
 beforeEach(() => jest.clearAllMocks())
 

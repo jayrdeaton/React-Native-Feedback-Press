@@ -1,7 +1,7 @@
 import { Pressable } from 'react-native'
 
-import { type AppbarActionProps, useHapticPressPaper } from '../../PaperContext'
-import { useHapticHandlers } from '../../useHapticHandlers'
+import { type AppbarActionProps, useFeedbackPressPaper } from '../../PaperContext'
+import { useFeedbackHandlers } from '../../useFeedbackHandlers'
 import { fallbackStyles } from './fallbackStyles'
 import { renderFallbackIcon } from './renderFallbackIcon'
 
@@ -12,8 +12,8 @@ export type { AppbarActionProps }
 // source (they share one underlying implementation), so whatever's true for BackAction's
 // onPressIn support is true here too. See AppbarBackAction.tsx's own comment/test.
 export const AppbarAction = (props: AppbarActionProps) => {
-  const paper = useHapticPressPaper()
-  const { icon, ...wired } = useHapticHandlers(props, { onPress: 'selection' })
+  const paper = useFeedbackPressPaper()
+  const { icon, ...wired } = useFeedbackHandlers(props, { onPress: 'selection' })
 
   if (paper) return <paper.Appbar.Action {...wired} icon={icon} />
 

@@ -1,14 +1,14 @@
 import { Pressable, Text } from 'react-native'
 
-import { type AppbarBackActionProps, useHapticPressPaper } from '../../PaperContext'
-import { useHapticHandlers } from '../../useHapticHandlers'
+import { type AppbarBackActionProps, useFeedbackPressPaper } from '../../PaperContext'
+import { useFeedbackHandlers } from '../../useFeedbackHandlers'
 import { fallbackStyles } from './fallbackStyles'
 
 export type { AppbarBackActionProps }
 
 export const AppbarBackAction = (props: AppbarBackActionProps) => {
-  const paper = useHapticPressPaper()
-  const wired = useHapticHandlers(props, { onPress: 'selection' })
+  const paper = useFeedbackPressPaper()
+  const wired = useFeedbackHandlers(props, { onPress: 'selection' })
 
   if (paper) return <paper.Appbar.BackAction {...wired} />
 

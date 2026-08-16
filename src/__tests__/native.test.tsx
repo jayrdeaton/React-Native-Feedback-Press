@@ -3,7 +3,7 @@ import * as haptics from 'expo-haptics'
 import { Platform, Pressable as RNPressable, TouchableHighlight as RNTouchableHighlight, TouchableOpacity as RNTouchableOpacity } from 'react-native'
 import React from 'react'
 
-import { HapticPressProvider } from '../HapticPressProvider'
+import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { Pressable, TouchableHighlight, TouchableOpacity } from '../index'
 
 const mockedHaptics = haptics as jest.Mocked<typeof haptics>
@@ -14,11 +14,11 @@ const MockTouchableHighlight = RNTouchableHighlight as unknown as jest.Mock
 const mockEvent = {} as any
 
 const enabled = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: true }}>{children}</HapticPressProvider>
+  <FeedbackPressProvider initialValue={{ vibrate: true }}>{children}</FeedbackPressProvider>
 )
 
 const disabled = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: false }}>{children}</HapticPressProvider>
+  <FeedbackPressProvider initialValue={{ vibrate: false }}>{children}</FeedbackPressProvider>
 )
 
 const lastProps = (mock: jest.Mock) => mock.mock.calls[mock.mock.calls.length - 1][0]

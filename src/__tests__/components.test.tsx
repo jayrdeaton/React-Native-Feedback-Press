@@ -4,13 +4,13 @@ import { Platform } from 'react-native'
 import * as Paper from 'react-native-paper'
 import React from 'react'
 
-import { HapticPressProvider } from '../HapticPressProvider'
+import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { Button, IconButton, TouchableRipple, Card, AppbarAction, AppbarBackAction, Chip, FAB, Checkbox, Switch, SegmentedButtons } from '../index'
 import type { PaperModuleShape } from '../PaperContext'
 
 const mockedHaptics = haptics as jest.Mocked<typeof haptics>
 // react-native-paper is no longer auto-detected via require() - it must be injected via
-// <HapticPressProvider paper={...}>. Pass the same mocked module the assertions below inspect.
+// <FeedbackPressProvider paper={...}>. Pass the same mocked module the assertions below inspect.
 const mockPaper = Paper as unknown as PaperModuleShape
 
 // Double-cast needed because TS sees the real Paper types, not the jest.fn() mocks
@@ -29,15 +29,15 @@ const MockSegmentedButtons = Paper.SegmentedButtons as unknown as jest.Mock
 const mockEvent = {} as any
 
 const enabled = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: true }} paper={mockPaper}>
+  <FeedbackPressProvider initialValue={{ vibrate: true }} paper={mockPaper}>
     {children}
-  </HapticPressProvider>
+  </FeedbackPressProvider>
 )
 
 const disabled = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: false }} paper={mockPaper}>
+  <FeedbackPressProvider initialValue={{ vibrate: false }} paper={mockPaper}>
     {children}
-  </HapticPressProvider>
+  </FeedbackPressProvider>
 )
 
 beforeEach(() => {

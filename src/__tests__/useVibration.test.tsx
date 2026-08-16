@@ -3,18 +3,18 @@ import * as haptics from 'expo-haptics'
 import { Platform, Vibration } from 'react-native'
 import React from 'react'
 
-import { HapticPressProvider } from '../HapticPressProvider'
+import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { useVibration } from '../useVibration'
 
 const mockedHaptics = haptics as jest.Mocked<typeof haptics>
 const mockedVibration = Vibration as jest.Mocked<typeof Vibration>
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: true }}>{children}</HapticPressProvider>
+  <FeedbackPressProvider initialValue={{ vibrate: true }}>{children}</FeedbackPressProvider>
 )
 
 const disabledWrapper = ({ children }: { children: React.ReactNode }) => (
-  <HapticPressProvider initialValue={{ vibrate: false }}>{children}</HapticPressProvider>
+  <FeedbackPressProvider initialValue={{ vibrate: false }}>{children}</FeedbackPressProvider>
 )
 
 beforeEach(() => {

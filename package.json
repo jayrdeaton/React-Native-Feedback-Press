@@ -1,25 +1,26 @@
 {
-  "name": "@rific/haptic-press",
-  "version": "0.6.1",
-  "description": "Haptic feedback wrappers for React Native Paper and built-in pressable components",
+  "name": "@rific/feedback-press",
+  "version": "0.1.0",
+  "description": "Haptic and sound feedback wrappers for React Native Paper and built-in pressable components",
   "keywords": [
     "react-native",
     "expo",
     "expo-haptics",
     "haptics",
     "haptic-feedback",
+    "sound",
     "vibration",
     "react-native-paper",
     "pressable",
     "touchable"
   ],
-  "homepage": "https://github.com/jayrdeaton/react-native-haptic-press#readme",
+  "homepage": "https://github.com/jayrdeaton/react-native-feedback-press#readme",
   "bugs": {
-    "url": "https://github.com/jayrdeaton/react-native-haptic-press/issues"
+    "url": "https://github.com/jayrdeaton/react-native-feedback-press/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jayrdeaton/react-native-haptic-press.git"
+    "url": "git+https://github.com/jayrdeaton/react-native-feedback-press.git"
   },
   "license": "MIT",
   "author": "Jay Deaton",

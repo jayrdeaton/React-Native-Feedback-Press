@@ -2,7 +2,7 @@ import * as haptics from 'expo-haptics'
 import { useCallback, useEffect, useRef } from 'react'
 import { Platform, Vibration } from 'react-native'
 
-import { useHapticPressContext } from './HapticPressProvider'
+import { useFeedbackPressContext } from './FeedbackPressProvider'
 
 const SHORT_DURATION = 50
 const MEDIUM_DURATION = 200
@@ -11,7 +11,7 @@ const DOUBLE_PULSE_DURATION = 150
 const DOUBLE_GAP_DURATION = 100
 
 export const useVibration = () => {
-  const { enabled } = useHapticPressContext()
+  const { enabled } = useFeedbackPressContext()
   const isIOS = Platform.OS === 'ios'
   const doubleTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 

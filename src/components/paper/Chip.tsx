@@ -1,14 +1,14 @@
 import { Pressable, Text } from 'react-native'
 
-import { type ChipProps, useHapticPressPaper } from '../../PaperContext'
-import { useHapticHandlers } from '../../useHapticHandlers'
+import { type ChipProps, useFeedbackPressPaper } from '../../PaperContext'
+import { useFeedbackHandlers } from '../../useFeedbackHandlers'
 import { fallbackStyles } from './fallbackStyles'
 
 export type { ChipProps }
 
 export const Chip = (props: ChipProps) => {
-  const paper = useHapticPressPaper()
-  const { children, mode, ...wired } = useHapticHandlers(props)
+  const paper = useFeedbackPressPaper()
+  const { children, mode, ...wired } = useFeedbackHandlers(props)
 
   if (paper)
     return (
@@ -18,7 +18,7 @@ export const Chip = (props: ChipProps) => {
     )
 
   // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Consumers
-  // who want the real look pass `paper` to <HapticPressProvider>.
+  // who want the real look pass `paper` to <FeedbackPressProvider>.
   return (
     <Pressable onLongPress={wired.onLongPress} onPress={wired.onPress} onPressIn={wired.onPressIn} style={[fallbackStyles.chip, mode === 'outlined' && fallbackStyles.chipOutlined]}>
       <Text style={fallbackStyles.chipText}>{children}</Text>

@@ -1,14 +1,14 @@
 import { Pressable, Text, View } from 'react-native'
 
-import { type SegmentedButtonsProps, useHapticPressPaper } from '../../PaperContext'
-import { useHapticHandlers } from '../../useHapticHandlers'
+import { type SegmentedButtonsProps, useFeedbackPressPaper } from '../../PaperContext'
+import { useFeedbackHandlers } from '../../useFeedbackHandlers'
 import { fallbackStyles } from './fallbackStyles'
 
 export type { SegmentedButtonsProps }
 
 export const SegmentedButtons = (props: SegmentedButtonsProps) => {
-  const paper = useHapticPressPaper()
-  const wired = useHapticHandlers(props, { onValueChange: 'selection' })
+  const paper = useFeedbackPressPaper()
+  const wired = useFeedbackHandlers(props, { onValueChange: 'selection' })
 
   if (paper) return <paper.SegmentedButtons {...wired} />
 

@@ -1,14 +1,14 @@
 import { Image, Pressable, Text, View } from 'react-native'
 
-import { type CardActionsProps, type CardContentProps, type CardCoverProps, type CardProps, type CardTitleProps, useHapticPressPaper } from '../../PaperContext'
-import { useHapticHandlers } from '../../useHapticHandlers'
+import { type CardActionsProps, type CardContentProps, type CardCoverProps, type CardProps, type CardTitleProps, useFeedbackPressPaper } from '../../PaperContext'
+import { useFeedbackHandlers } from '../../useFeedbackHandlers'
 import { fallbackStyles } from './fallbackStyles'
 
 export type { CardProps }
 
 const CardComponent = (props: CardProps) => {
-  const paper = useHapticPressPaper()
-  const { children, mode, ...wired } = useHapticHandlers(props)
+  const paper = useFeedbackPressPaper()
+  const { children, mode, ...wired } = useFeedbackHandlers(props)
 
   if (paper)
     return (
@@ -28,14 +28,14 @@ const CardComponent = (props: CardProps) => {
 }
 
 const CardContent = ({ children, ...rest }: CardContentProps) => {
-  const paper = useHapticPressPaper()
+  const paper = useFeedbackPressPaper()
   if (paper) return <paper.Card.Content {...rest}>{children}</paper.Card.Content>
   return <View style={fallbackStyles.cardContent}>{children}</View>
 }
 CardContent.displayName = 'Card.Content'
 
 const CardTitle = (props: CardTitleProps) => {
-  const paper = useHapticPressPaper()
+  const paper = useFeedbackPressPaper()
   if (paper) return <paper.Card.Title {...props} />
   const { subtitle, title } = props
   return (
@@ -48,14 +48,14 @@ const CardTitle = (props: CardTitleProps) => {
 CardTitle.displayName = 'Card.Title'
 
 const CardActions = ({ children, ...rest }: CardActionsProps) => {
-  const paper = useHapticPressPaper()
+  const paper = useFeedbackPressPaper()
   if (paper) return <paper.Card.Actions {...rest}>{children}</paper.Card.Actions>
   return <View style={fallbackStyles.cardActions}>{children}</View>
 }
 CardActions.displayName = 'Card.Actions'
 
 const CardCover = (props: CardCoverProps) => {
-  const paper = useHapticPressPaper()
+  const paper = useFeedbackPressPaper()
   if (paper) return <paper.Card.Cover {...props} />
   return <Image source={props.source} style={fallbackStyles.cardCover} />
 }

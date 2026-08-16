@@ -1,7 +1,7 @@
 import { Pressable as RNPressable, type PressableProps } from 'react-native'
 
-import { withHaptics } from '../../withHaptics'
+import { withFeedback } from '../../withFeedback'
 
 export type { PressableProps }
 
-export const Pressable = withHaptics<PressableProps>(RNPressable)
+export const Pressable = withFeedback<PressableProps>(RNPressable)
