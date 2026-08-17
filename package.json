@@ -32,6 +32,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./audio": {
+      "react-native": "./src/audio/index.ts",
+      "types": "./dist/audio/index.d.ts",
+      "import": "./dist/audio/index.mjs",
+      "require": "./dist/audio/index.js"
     }
   },
   "main": "dist/index.js",
@@ -45,8 +51,8 @@
     "!src/__mocks__"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
-    "build:watch": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "build": "tsup src/index.ts src/audio/index.ts --format cjs,esm --dts --clean",
+    "build:watch": "tsup src/index.ts src/audio/index.ts --format cjs,esm --dts --watch",
     "fix": "eslint --fix",
     "lint": "eslint",
     "prepublishOnly": "npm run build",
@@ -72,6 +78,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react-native": "^5.0.0",
     "eslint-plugin-simple-import-sort": "^13.0.0",
+    "expo-audio": "~57.0.3",
     "expo-haptics": "^56.0.3",
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
@@ -87,12 +94,16 @@
     "typescript-eslint": "^8.59.3"
   },
   "peerDependencies": {
+    "expo-audio": ">=56.0.0",
     "expo-haptics": ">=56.0.0",
     "react": ">=19.0.0",
     "react-native": ">=0.76.0",
     "react-native-paper": ">=5.0.0"
   },
   "peerDependenciesMeta": {
+    "expo-audio": {
+      "optional": true
+    },
     "react-native-paper": {
       "optional": true
     }

@@ -6,6 +6,7 @@ module.exports = {
   moduleNameMapper: {
     '^react-native$': '<rootDir>/src/__mocks__/react-native.ts',
     '^react-native-paper$': '<rootDir>/src/__mocks__/react-native-paper.ts',
+    '^expo-audio$': '<rootDir>/src/__mocks__/expo-audio.ts',
     '^expo-haptics$': '<rootDir>/src/__mocks__/expo-haptics.ts'
   },
   transform: {

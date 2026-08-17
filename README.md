@@ -303,6 +303,39 @@ export function App() {
 
 Both keys are optional: pass only the ones you have a sound for.
 
+### Playing the sounds: `@rific/feedback-press/audio`
+
+`sound` just wants a `() => void` per event - how you build `playClick`/`playChime` is up to you. If you're using `expo-audio`, `@rific/feedback-press/audio` exports `useAudioPool`, a small hook that plays a clip through a round-robin pool of players instead of a single shared one:
+
+```sh
+npm install expo-audio
+```
+
+```tsx
+import { useAudioPool } from '@rific/feedback-press/audio'
+import { FeedbackPressProvider } from '@rific/feedback-press'
+
+const CLICK_SOUND = require('./assets/click.wav')
+const CHIME_SOUND = require('./assets/chime.wav')
+
+export function App() {
+  const playClick = useAudioPool(CLICK_SOUND)
+  const playChime = useAudioPool(CHIME_SOUND, { poolSize: 6 })
+
+  return (
+    <FeedbackPressProvider sound={{ selection: playClick, notification: playChime }}>
+      <RootNavigator />
+    </FeedbackPressProvider>
+  )
+}
+```
+
+**Why a pool, not a single player:** a single `AudioPlayer` retriggered rapidly races itself - a second press's `seekTo(0)` (needed so a retriggered clip restarts from the top instead of resuming mid-clip) can reset playback position out from under the first press's still-in-flight `play()` call, silently aborting it. The sound just never plays for that press, not merely overlaps or cuts short. `useAudioPool` builds the pool with `createAudioPlayer` (a plain factory, not the `useAudioPlayer` hook) and hands back a single play function; overlapping presses land on different players internally and never race each other.
+
+`poolSize` (default `4`, clamped to 16) is a real allocation, not a fixed ceiling - `poolSize: 1` creates exactly one native player, `poolSize: 6` creates six. Pick it per clip based on how often that specific sound actually gets retriggered in quick succession: a one-shot sound (a win/loss jingle) is fine at the default or even `1`, while something a user might rapidly double/triple-tap wants more headroom. Call `useAudioPool` once per clip, same as `useAudioPlayer`.
+
+`expo-audio` is a peer dependency of this subpath only, not of the package's main entry - haptics-only consumers never need it installed, and Metro never traces it unless you import from `@rific/feedback-press/audio` yourself.
+
 ### Per-instance overrides
 
 Every wrapper component accepts four optional, wiring-time-only props for tweaking just that one instance — none of them ever reach the underlying Paper/native component:
