@@ -16,9 +16,14 @@ export type IconValue = string | ((props: { color: string; size: number }) => Re
 export type ButtonProps = {
   children: ReactNode
   mode?: 'contained' | 'contained-tonal' | 'elevated' | 'outlined' | 'text'
+  // Both released-early opt-outs of a still-running onLongPress: onPressOut on release, or
+  // delayLongPress to tune how long a press must hold before onLongPress fires at all (see
+  // useHoldToRepeat, which wires both of these directly).
+  delayLongPress?: number
   onLongPress?: (e: GestureResponderEvent) => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  onPressOut?: (e: GestureResponderEvent) => void
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -32,9 +37,14 @@ export type ButtonProps = {
 
 export type IconButtonProps = {
   icon: IconValue
+  // Both released-early opt-outs of a still-running onLongPress: onPressOut on release, or
+  // delayLongPress to tune how long a press must hold before onLongPress fires at all (see
+  // useHoldToRepeat, which wires both of these directly).
+  delayLongPress?: number
   onLongPress?: (e: GestureResponderEvent) => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  onPressOut?: (e: GestureResponderEvent) => void
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -48,9 +58,14 @@ export type IconButtonProps = {
 
 export type TouchableRippleProps = {
   children: ReactNode
+  // Both released-early opt-outs of a still-running onLongPress: onPressOut on release, or
+  // delayLongPress to tune how long a press must hold before onLongPress fires at all (see
+  // useHoldToRepeat, which wires both of these directly).
+  delayLongPress?: number
   onLongPress?: (e: GestureResponderEvent) => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  onPressOut?: (e: GestureResponderEvent) => void
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -68,10 +83,15 @@ export type CardProps = {
   // 'elevated'/'contained', simplified to a plain optional union here, same tradeoff as
   // onLongPress below, to avoid mirroring the full discriminated-union shape.
   mode?: 'contained' | 'elevated' | 'outlined'
+  // Both released-early opt-outs of a still-running onLongPress: onPressOut on release, or
+  // delayLongPress to tune how long a press must hold before onLongPress fires at all (see
+  // useHoldToRepeat, which wires both of these directly).
+  delayLongPress?: number
   // Paper's Card.onLongPress is () => void (no event arg)
   onLongPress?: () => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  onPressOut?: (e: GestureResponderEvent) => void
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -100,10 +120,15 @@ export type CardCoverProps = { source: ImageSourcePropType; [prop: string]: unkn
 export type ChipProps = {
   children: ReactNode
   mode?: 'flat' | 'outlined'
+  // Both released-early opt-outs of a still-running onLongPress: onPressOut on release, or
+  // delayLongPress to tune how long a press must hold before onLongPress fires at all (see
+  // useHoldToRepeat, which wires both of these directly).
+  delayLongPress?: number
   // Paper's Chip.onLongPress is () => void (no event arg)
   onLongPress?: () => void
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
+  onPressOut?: (e: GestureResponderEvent) => void
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -118,9 +143,14 @@ export type ChipProps = {
 export type FABProps = {
   icon: IconValue
   mode?: 'elevated' | 'flat'
+  // Both released-early opt-outs of a still-running onLongPress: onPressOut on release, or
+  // delayLongPress to tune how long a press must hold before onLongPress fires at all (see
+  // useHoldToRepeat, which wires both of these directly).
+  delayLongPress?: number
   onLongPress?: (e: GestureResponderEvent) => void
   // FAB does not expose onPressIn, so the haptic fires on onPress instead
   onPress?: (e: GestureResponderEvent) => void
+  onPressOut?: (e: GestureResponderEvent) => void
   size?: 'large' | 'medium' | 'small'
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean

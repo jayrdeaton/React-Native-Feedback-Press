@@ -4,7 +4,7 @@ import * as Paper from 'react-native-paper'
 import React from 'react'
 
 import { FeedbackPressProvider } from '../FeedbackPressProvider'
-import { Button, Card, IconButton, SegmentedButtons, Switch } from '../index'
+import { Button, Card, Chip, FAB, IconButton, SegmentedButtons, Switch, TouchableRipple } from '../index'
 import type { PaperModuleShape } from '../PaperContext'
 
 // react-native-paper is a genuinely optional injection - it's never auto-detected and never
@@ -42,6 +42,27 @@ describe('Button', () => {
     expect(MockPaperButton).toHaveBeenCalled()
     expect(MockPressable).not.toHaveBeenCalled()
   })
+
+  // onPressOut/delayLongPress must reach the fallback Pressable, not just onPress/onLongPress -
+  // useHoldToRepeat's onPressOut is what actually stops its repeat interval on release, so
+  // dropping it here would leave that interval running forever in fallback mode. See FAB's own
+  // equivalent test below for the first component this was caught on.
+  it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
+    const onPressOut = jest.fn()
+    render(
+      <Button onPress={jest.fn()} onLongPress={jest.fn()} onPressOut={onPressOut} delayLongPress={400}>
+        Submit
+      </Button>,
+      { wrapper: withoutPaper }
+    )
+
+    expect(MockPressable).toHaveBeenCalled()
+    const props = lastProps(MockPressable)
+    expect(props.delayLongPress).toBe(400)
+
+    props.onPressOut()
+    expect(onPressOut).toHaveBeenCalledTimes(1)
+  })
 })
 
 describe('Card', () => {
@@ -58,6 +79,24 @@ describe('Card', () => {
   it('renders an interactive Pressable fallback when onPress is provided', () => {
     render(<Card onPress={jest.fn()}>{null}</Card>, { wrapper: withoutPaper })
     expect(MockPressable).toHaveBeenCalled()
+  })
+
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
+    const onPressOut = jest.fn()
+    render(
+      <Card onPress={jest.fn()} onLongPress={jest.fn()} onPressOut={onPressOut} delayLongPress={400}>
+        {null}
+      </Card>,
+      { wrapper: withoutPaper }
+    )
+
+    expect(MockPressable).toHaveBeenCalled()
+    const props = lastProps(MockPressable)
+    expect(props.delayLongPress).toBe(400)
+
+    props.onPressOut()
+    expect(onPressOut).toHaveBeenCalledTimes(1)
   })
 
   it('Content/Title/Actions/Cover all render a working fallback without paper injected', () => {
@@ -101,6 +140,94 @@ describe('IconButton', () => {
     const { container } = render(<IconButton icon="star" onPress={jest.fn()} />, { wrapper: withoutPaper })
     expect(MockPressable).toHaveBeenCalled()
     expect(container.textContent).toBe('S')
+  })
+
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
+    const onPressOut = jest.fn()
+    render(<IconButton icon='star' onPress={jest.fn()} onLongPress={jest.fn()} onPressOut={onPressOut} delayLongPress={400} />, { wrapper: withoutPaper })
+
+    expect(MockPressable).toHaveBeenCalled()
+    const props = lastProps(MockPressable)
+    expect(props.delayLongPress).toBe(400)
+
+    props.onPressOut()
+    expect(onPressOut).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Chip', () => {
+  it('renders the plain-RN fallback without paper injected', () => {
+    const { container } = render(<Chip onPress={jest.fn()}>Filter</Chip>, { wrapper: withoutPaper })
+    expect(MockPressable).toHaveBeenCalled()
+    expect(container.textContent).toBe('Filter')
+  })
+
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
+    const onPressOut = jest.fn()
+    render(
+      <Chip onPress={jest.fn()} onLongPress={jest.fn()} onPressOut={onPressOut} delayLongPress={400}>
+        Filter
+      </Chip>,
+      { wrapper: withoutPaper }
+    )
+
+    expect(MockPressable).toHaveBeenCalled()
+    const props = lastProps(MockPressable)
+    expect(props.delayLongPress).toBe(400)
+
+    props.onPressOut()
+    expect(onPressOut).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('TouchableRipple', () => {
+  it('renders the plain-RN fallback without paper injected', () => {
+    const { container } = render(
+      <TouchableRipple onPress={jest.fn()}>Ripple</TouchableRipple>,
+      { wrapper: withoutPaper }
+    )
+    expect(MockPressable).toHaveBeenCalled()
+    expect(container.textContent).toBe('Ripple')
+  })
+
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
+    const onPressOut = jest.fn()
+    render(
+      <TouchableRipple onPress={jest.fn()} onLongPress={jest.fn()} onPressOut={onPressOut} delayLongPress={400}>
+        Ripple
+      </TouchableRipple>,
+      { wrapper: withoutPaper }
+    )
+
+    expect(MockPressable).toHaveBeenCalled()
+    const props = lastProps(MockPressable)
+    expect(props.delayLongPress).toBe(400)
+
+    props.onPressOut()
+    expect(onPressOut).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('FAB', () => {
+  // onPressOut/delayLongPress must reach the fallback Pressable, not just onPress/onLongPress -
+  // useHoldToRepeat's onPressOut is what actually stops its repeat interval on release, so
+  // dropping it here would leave that interval running forever in fallback mode (see
+  // useHoldToRepeat.test.tsx for the hook-level coverage; this is the FAB-forwarding half).
+  it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
+    const onPress = jest.fn()
+    const onLongPress = jest.fn()
+    const onPressOut = jest.fn()
+    render(<FAB icon='plus' onPress={onPress} onLongPress={onLongPress} onPressOut={onPressOut} delayLongPress={400} />, { wrapper: withoutPaper })
+
+    expect(MockPressable).toHaveBeenCalled()
+    const props = lastProps(MockPressable)
+    expect(props.delayLongPress).toBe(400)
+
+    props.onPressOut()
+    expect(onPressOut).toHaveBeenCalledTimes(1)
   })
 })
 

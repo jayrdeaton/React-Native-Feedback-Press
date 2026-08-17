@@ -238,6 +238,48 @@ All methods respect the `FeedbackPressProvider` `enabled` flag. The `force*` var
 
 On iOS, methods use `expo-haptics` native APIs. On Android, they fall back to `Vibration.vibrate()` with mapped durations.
 
+## `useHoldToRepeat`
+
+For a long-press-and-hold control that should keep firing for as long as it's held — a stepper FAB, a randomize button, anything with a "do it again, and again" gesture — rather than a single one-shot `onLongPress`. Fires `action` once immediately, then again every `repeatMs` for as long as the hold continues, alongside a `selection`/`notification` pulse (haptic and, if configured, sound) on **every** one of those firings, not just the first.
+
+Component-agnostic: `useHoldToRepeat` just returns plain `onLongPress`/`onPressOut` callbacks, so it works with any component that exposes those two props — every wrapper in this package (`Button`, `Card`, `Chip`, `FAB`, `IconButton`, `TouchableRipple`, the native `Pressable`/`TouchableOpacity`/`TouchableHighlight`), a plain `react-native-paper` or bare-RN component, or your own via `withFeedback`. It's demonstrated below with `FAB`, but nothing about it is FAB-specific — including in this package's own plain-RN fallback (no `paper` injected): every wrapper that accepts `onLongPress` also correctly forwards `onPressOut`/`delayLongPress` in fallback mode, not just when Paper is real.
+
+```tsx
+import { FAB, useHoldToRepeat } from '@rific/feedback-press'
+
+export function StepperFAB({ onStep }: { onStep: () => void }) {
+  const hold = useHoldToRepeat(onStep, 400)
+
+  return <FAB icon='plus' onLongPress={hold.onLongPress} onPressOut={hold.onPressOut} delayLongPress={400} />
+}
+```
+
+```ts
+const {
+  onLongPress,  // () => void — wire to the component's own onLongPress
+  onPressOut,   // () => void — wire to the component's own onPressOut
+} = useHoldToRepeat(action, repeatMs, options?)
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `feedback` | `'selection' \| 'notification' \| false` | `'selection'` | Which feedback event fires on every tick. `false` disables feedback for the whole repeat loop; `action` still fires normally. |
+| `hapticDisabled` | `boolean` | `false` | Suppresses just the haptic, keeping any sound. |
+| `soundDisabled` | `boolean` | `false` | Suppresses just the sound, keeping the haptic. |
+| `sound` | `SoundConfig` | - | Overrides the provider's ambient `sound` config for just this hold-to-repeat loop, the same per-instance override every wrapper component's own `sound` prop already gives. |
+
+`useHoldToRepeatByKey` is the keyed sibling, for a set of independently-holdable targets that all funnel through one action (e.g. per-item "randomize" buttons rendered from a list) instead of a single fixed one — same shape, but `action` takes a `key`, and `onLongPress`/`onPressOut` are curried on it. Two different keys held at once keep entirely separate timers; releasing one never stops the other's.
+
+```tsx
+const hold = useHoldToRepeatByKey(randomizeGroup, 1000)
+
+<FAB onLongPress={hold.onLongPress('mirror')} onPressOut={hold.onPressOut('mirror')} />
+```
+
+Both hooks call `action` (and pulse feedback) synchronously on the initial `onLongPress` — pair with a component that already fires its own `notification` there (like this package's own `FAB`) and the very first press gets both; that's intentional, the same "confirmed, now repeating" double-pulse a real long-press-then-hold naturally reads as.
+
+`onLongPress` is safe to call again before a matching `onPressOut` (e.g. a gesture handler that double-fires it) — it restarts the repeat cleanly instead of leaking the previous interval.
+
 ## Sound feedback
 
 Pass a `sound` config to `<FeedbackPressProvider>` to fire an app-supplied callback at the same instant a `selection`/`notification` haptic fires - a generic UI click sound, a success chime, whatever your app plays. It's entirely optional: omit `sound` and every component behaves exactly as before this prop existed, haptic-only.

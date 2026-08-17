@@ -6,6 +6,7 @@ export { hapticActions, hapticReducer } from './redux/hapticSlice'
 export { type SoundConfig, SoundContext } from './SoundContext'
 export { type FeedbackTrigger, type FeedbackWiring, type FeedbackWiringEntry, PRESS_WIRING, useFeedbackHandlers } from './useFeedbackHandlers'
 export { useHapticSettings } from './useHapticSettings'
+export { type HoldToRepeatOptions, useHoldToRepeat, useHoldToRepeatByKey } from './useHoldToRepeat'
 export { useVibration } from './useVibration'
 export { withFeedback } from './withFeedback'
 
