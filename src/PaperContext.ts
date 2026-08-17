@@ -24,6 +24,11 @@ export type ButtonProps = {
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
   onPressOut?: (e: GestureResponderEvent) => void
+  // Swaps the default "selection fires on touch-down, notification separately on a completed
+  // long-press" (so both can fire on one gesture) for "exactly one fires per gesture, never
+  // both": selection is deferred to release and only actually fires if the press never escalated
+  // to a long-press. See useFeedbackHandlers's own comment for the mechanics.
+  exclusive?: boolean
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -45,6 +50,11 @@ export type IconButtonProps = {
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
   onPressOut?: (e: GestureResponderEvent) => void
+  // Swaps the default "selection fires on touch-down, notification separately on a completed
+  // long-press" (so both can fire on one gesture) for "exactly one fires per gesture, never
+  // both": selection is deferred to release and only actually fires if the press never escalated
+  // to a long-press. See useFeedbackHandlers's own comment for the mechanics.
+  exclusive?: boolean
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -66,6 +76,11 @@ export type TouchableRippleProps = {
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
   onPressOut?: (e: GestureResponderEvent) => void
+  // Swaps the default "selection fires on touch-down, notification separately on a completed
+  // long-press" (so both can fire on one gesture) for "exactly one fires per gesture, never
+  // both": selection is deferred to release and only actually fires if the press never escalated
+  // to a long-press. See useFeedbackHandlers's own comment for the mechanics.
+  exclusive?: boolean
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -92,6 +107,11 @@ export type CardProps = {
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
   onPressOut?: (e: GestureResponderEvent) => void
+  // Swaps the default "selection fires on touch-down, notification separately on a completed
+  // long-press" (so both can fire on one gesture) for "exactly one fires per gesture, never
+  // both": selection is deferred to release and only actually fires if the press never escalated
+  // to a long-press. See useFeedbackHandlers's own comment for the mechanics.
+  exclusive?: boolean
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -129,6 +149,11 @@ export type ChipProps = {
   onPress?: (e: GestureResponderEvent) => void
   onPressIn?: (e: GestureResponderEvent) => void
   onPressOut?: (e: GestureResponderEvent) => void
+  // Swaps the default "selection fires on touch-down, notification separately on a completed
+  // long-press" (so both can fire on one gesture) for "exactly one fires per gesture, never
+  // both": selection is deferred to release and only actually fires if the press never escalated
+  // to a long-press. See useFeedbackHandlers's own comment for the mechanics.
+  exclusive?: boolean
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to
@@ -152,6 +177,11 @@ export type FABProps = {
   onPress?: (e: GestureResponderEvent) => void
   onPressOut?: (e: GestureResponderEvent) => void
   size?: 'large' | 'medium' | 'small'
+  // Swaps the default "selection fires on touch-down, notification separately on a completed
+  // long-press" (so both can fire on one gesture) for "exactly one fires per gesture, never
+  // both": selection is deferred to release and only actually fires if the press never escalated
+  // to a long-press. See useFeedbackHandlers's own comment for the mechanics.
+  exclusive?: boolean
   // Opts this instance out of the provider's `sound` callback while keeping its haptic.
   soundDisabled?: boolean
   // Opts this instance out of haptics while keeping its sound - the independent counterpart to

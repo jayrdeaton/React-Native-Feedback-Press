@@ -305,13 +305,14 @@ Both keys are optional: pass only the ones you have a sound for.
 
 ### Per-instance overrides
 
-Every wrapper component accepts three optional, wiring-time-only props for tweaking just that one instance — none of them ever reach the underlying Paper/native component:
+Every wrapper component accepts four optional, wiring-time-only props for tweaking just that one instance — none of them ever reach the underlying Paper/native component:
 
 | Prop | Effect |
 |---|---|
 | `soundDisabled` | Suppresses just the sound callback on this instance, keeping its haptic. |
 | `hapticDisabled` | Suppresses just the haptic on this instance, keeping its sound - the independent counterpart to `soundDisabled`. |
 | `sound` | Overrides the provider's ambient `sound` config for just this instance, e.g. a distinct sound for one particular button. Same `{ selection?, notification? }` shape as the provider's own `sound` prop. |
+| `exclusive` | Fires exactly one of `selection`/`notification` per gesture instead of both - see below. |
 
 ```tsx
 // A silent-but-still-vibrating button:
@@ -323,6 +324,16 @@ Every wrapper component accepts three optional, wiring-time-only props for tweak
 // A button with its own distinct sound instead of the app-wide generic click:
 <Button sound={{ selection: playDeleteSound }} onPress={remove}>Delete</Button>
 ```
+
+### `exclusive`
+
+By default, `selection` fires the moment a finger goes down (`onPressIn`, matching native iOS feel) and `notification` fires separately if the press escalates into a completed long-press - so a slow press-and-hold fires *both*, one after the other. That's the right feel for most buttons, but some presses want the opposite: a stepper's `-`/`+`, a delete action distinct from a delete-and-undo long-press, anything where the two feedback events represent mutually exclusive outcomes of the same gesture rather than an escalating pair.
+
+```tsx
+<Button exclusive onPress={submit} onLongPress={submitAndClose}>Submit</Button>
+```
+
+With `exclusive`, `selection` is deferred all the way to release and only actually fires if the press never escalated - `notification` alone fires for a completed long-press, never both. Your own `onPress`/`onLongPress`/`onPressIn`/`onPressOut` callbacks are unaffected either way; only the haptic/sound feedback's timing changes. Works on every wrapper that accepts `onLongPress` (`Button`, `Card`, `Chip`, `FAB`, `IconButton`, `TouchableRipple`), the native `Pressable`/`TouchableOpacity`/`TouchableHighlight` wrappers, and your own components via `withFeedback` - anywhere the underlying `wiring` maps some prop to `notification`. On a component with no long-press concept (`Checkbox`, `Switch`, `SegmentedButtons`, `AppbarAction`, `AppbarBackAction`), `exclusive` is a harmless no-op, since there's nothing to be exclusive against.
 
 ## Usage with `@rific/auto-paper`
 
