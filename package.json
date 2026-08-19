@@ -1,6 +1,6 @@
 {
   "name": "@rific/feedback-press",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Haptic and sound feedback wrappers for React Native Paper and built-in pressable components",
   "keywords": [
     "react-native",
