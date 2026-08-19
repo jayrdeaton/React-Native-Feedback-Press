@@ -55,16 +55,24 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
   const playersRef = useRef<AudioPlayer[]>([])
   const nextIndex = useRef(0)
 
-  // Runs after commit, before any event handler (including the play function below) can possibly
-  // fire, so playersRef.current is never read empty in practice. Rebuilds the whole pool from
-  // scratch on any source/poolSize change rather than trying to grow/shrink the existing one in
-  // place - these are essentially always static requires in practice, so simplicity wins over
-  // preserving in-flight players across a change that shouldn't happen after mount anyway.
+  // Pool creation is pushed one tick out via setTimeout rather than run inline in the effect. A
+  // screen that mounts many pools at once (e.g. the feedback-press demo's 42-sound sampler, 168
+  // players total) would otherwise run every createAudioPlayer call synchronously in the same
+  // commit-phase effect, blocking the JS thread right as the screen becomes interactive. Deferring
+  // lets the screen finish mounting first; a human tap can't outrace a 0ms timer. Rebuilds the
+  // whole pool from scratch on any source/poolSize change rather than trying to grow/shrink the
+  // existing one in place - these are essentially always static requires in practice, so
+  // simplicity wins over preserving in-flight players across a change that shouldn't happen after
+  // mount anyway.
   useEffect(() => {
-    const players = Array.from({ length: poolSize }, () => createAudioPlayer(source))
-    playersRef.current = players
-    nextIndex.current = 0
+    let players: AudioPlayer[] = []
+    const timer = setTimeout(() => {
+      players = Array.from({ length: poolSize }, () => createAudioPlayer(source))
+      playersRef.current = players
+      nextIndex.current = 0
+    }, 0)
     return () => {
+      clearTimeout(timer)
       players.forEach((player) => player.remove())
       playersRef.current = []
     }
