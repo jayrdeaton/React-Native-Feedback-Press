@@ -148,6 +148,8 @@ All components are drop-in replacements with identical prop types to their origi
 | `onChange` | `(settings: HapticSettings) => void` | - | Called with the full settings object whenever settings change. |
 | `paper` | `PaperModuleShape` | - | Injects `react-native-paper` (`import * as RNPaper from 'react-native-paper'`) so the Paper wrappers render the real thing instead of their plain-RN fallback. Never auto-detected, never required. |
 | `sound` | `SoundConfig` | - | Fires an app-supplied callback alongside each haptic. See [Sound feedback](#sound-feedback). |
+| `soundInitialValue` | `Partial<SoundSettings>` | `defaultSoundSettings` | Initial sound settings. Merged with defaults, partial is fine. |
+| `onSoundChange` | `(settings: SoundSettings) => void` | - | Called with the full sound settings object whenever sound settings change. |
 | `children` | `ReactNode` | - | |
 
 ```ts
@@ -335,6 +337,66 @@ export function App() {
 `poolSize` (default `4`, clamped to 16) is a real allocation, not a fixed ceiling - `poolSize: 1` creates exactly one native player, `poolSize: 6` creates six. Pick it per clip based on how often that specific sound actually gets retriggered in quick succession: a one-shot sound (a win/loss jingle) is fine at the default or even `1`, while something a user might rapidly double/triple-tap wants more headroom. Call `useAudioPool` once per clip, same as `useAudioPlayer`.
 
 `expo-audio` is a peer dependency of this subpath only, not of the package's main entry - haptics-only consumers never need it installed, and Metro never traces it unless you import from `@rific/feedback-press/audio` yourself.
+
+### `useSoundSettings`
+
+A global sound-enabled toggle, analogous to `useHapticSettings` for vibration. When `enabled` is `false`, every `sound` callback (provider-wide and per-instance) is suppressed regardless of `soundDisabled`; haptics are unaffected.
+
+```ts
+type SoundSettings = {
+  enabled: boolean  // default: true
+}
+```
+
+Read or update the setting from anywhere inside the provider:
+
+```tsx
+import { useSoundSettings } from '@rific/feedback-press'
+
+export function SettingsScreen() {
+  const { settings, set } = useSoundSettings()
+
+  return (
+    <Switch
+      value={settings.enabled}
+      onValueChange={(value) => set({ enabled: value })}
+    />
+  )
+}
+```
+
+### Redux integration
+
+If your app uses Redux, wire the included slice to your store and bridge it to the provider, the same way as `hapticReducer`/`hapticActions`:
+
+```tsx
+import { configureStore } from '@reduxjs/toolkit'
+import { soundReducer, soundActions, FeedbackPressProvider } from '@rific/feedback-press'
+import { useSelector, useDispatch } from 'react-redux'
+
+const store = configureStore({
+  reducer: {
+    sound: soundReducer,
+    // ...
+  }
+})
+
+export function App() {
+  const dispatch = useDispatch()
+  const settings = useSelector((state) => state.sound)
+
+  return (
+    <FeedbackPressProvider
+      soundInitialValue={settings}
+      onSoundChange={(next) => dispatch(soundActions.initialize(next))}
+    >
+      <RootNavigator />
+    </FeedbackPressProvider>
+  )
+}
+```
+
+Available actions: `soundActions.initialize(settings)` (replace all), `soundActions.setEnabled(boolean)`.
 
 ### Per-instance overrides
 

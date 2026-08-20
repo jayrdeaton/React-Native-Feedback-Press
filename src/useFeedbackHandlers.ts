@@ -1,5 +1,6 @@
 import { useContext, useRef } from 'react'
 
+import { useFeedbackPressSoundContext } from './FeedbackPressProvider'
 import { SoundConfig, SoundContext } from './SoundContext'
 import { useVibration } from './useVibration'
 
@@ -55,6 +56,7 @@ const eventOf = <P>(entry: FeedbackWiringEntry<P> | undefined): FeedbackTrigger 
 // useHoldToRepeat's own refs guard against.
 export function useFeedbackHandlers<P extends object>(props: P, wiring: FeedbackWiring<P> = PRESS_WIRING as unknown as FeedbackWiring<P>): P {
   const { selection, notification } = useVibration()
+  const { enabled: soundEnabled } = useFeedbackPressSoundContext()
   const contextSound: SoundConfig = useContext(SoundContext)
   const longPressFired = useRef(false)
   const wired = { ...props } as Record<string, unknown>
@@ -76,7 +78,7 @@ export function useFeedbackHandlers<P extends object>(props: P, wiring: Feedback
 
   const fire = (event: FeedbackTrigger) => {
     if (!hapticDisabled) (event === 'selection' ? selection : notification)()
-    if (!soundDisabled) sound[event]?.()
+    if (!soundDisabled && soundEnabled) sound[event]?.()
   }
 
   const longPressKey = (Object.keys(wiring) as (keyof P)[]).find((key) => eventOf(wiring[key]) === 'notification')

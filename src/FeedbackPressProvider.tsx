@@ -3,6 +3,7 @@ import { type ReactNode, useCallback, useContext, useState } from 'react'
 import { defaultHapticSettings, type HapticSettings, HapticSettingsContext } from './HapticSettingsContext'
 import { PaperContext, type PaperModuleShape } from './PaperContext'
 import { type SoundConfig, SoundContext } from './SoundContext'
+import { defaultSoundSettings, type SoundSettings, SoundSettingsContext } from './SoundSettingsContext'
 
 const EMPTY_SOUND: SoundConfig = {}
 
@@ -14,9 +15,13 @@ export type FeedbackPressProviderProps = {
   paper?: PaperModuleShape
   /** Fires an app-supplied callback at the same instant a `selection`/`notification` haptic fires - e.g. a generic UI click sound. Omit entirely for haptic-only behavior (the default, unchanged from before this prop existed). A single component instance can opt out of just the sound (keeping its haptic) via its own `soundDisabled` prop. */
   sound?: SoundConfig
+  /** Initial value for the sound-enabled setting, analogous to `initialValue` for haptics. */
+  soundInitialValue?: Partial<SoundSettings>
+  /** Called with the full sound settings object whenever they change via `useSoundSettings().set`, analogous to `onChange` for haptics. */
+  onSoundChange?: (settings: SoundSettings) => void
 }
 
-export function FeedbackPressProvider({ children, initialValue, onChange, paper, sound }: FeedbackPressProviderProps) {
+export function FeedbackPressProvider({ children, initialValue, onChange, paper, sound, soundInitialValue, onSoundChange }: FeedbackPressProviderProps) {
   const [settings, setSettings] = useState<HapticSettings>(() => ({ ...defaultHapticSettings, ...initialValue }))
   const set = useCallback(
     (patch: Partial<HapticSettings>) => {
@@ -28,11 +33,24 @@ export function FeedbackPressProvider({ children, initialValue, onChange, paper,
     },
     [onChange]
   )
+  const [soundSettings, setSoundSettings] = useState<SoundSettings>(() => ({ ...defaultSoundSettings, ...soundInitialValue }))
+  const setSoundSetting = useCallback(
+    (patch: Partial<SoundSettings>) => {
+      setSoundSettings((prev) => {
+        const next = { ...prev, ...patch }
+        onSoundChange?.(next)
+        return next
+      })
+    },
+    [onSoundChange]
+  )
   return (
     <HapticSettingsContext.Provider value={{ settings, set }}>
-      <PaperContext.Provider value={paper ?? null}>
-        <SoundContext.Provider value={sound ?? EMPTY_SOUND}>{children}</SoundContext.Provider>
-      </PaperContext.Provider>
+      <SoundSettingsContext.Provider value={{ settings: soundSettings, set: setSoundSetting }}>
+        <PaperContext.Provider value={paper ?? null}>
+          <SoundContext.Provider value={sound ?? EMPTY_SOUND}>{children}</SoundContext.Provider>
+        </PaperContext.Provider>
+      </SoundSettingsContext.Provider>
     </HapticSettingsContext.Provider>
   )
 }
@@ -40,4 +58,9 @@ export function FeedbackPressProvider({ children, initialValue, onChange, paper,
 export const useFeedbackPressContext = () => {
   const { settings } = useContext(HapticSettingsContext)
   return { enabled: settings.vibrate }
+}
+
+export const useFeedbackPressSoundContext = () => {
+  const { settings } = useContext(SoundSettingsContext)
+  return { enabled: settings.enabled }
 }
