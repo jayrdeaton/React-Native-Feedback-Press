@@ -67,7 +67,14 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
   useEffect(() => {
     let players: AudioPlayer[] = []
     const timer = setTimeout(() => {
-      players = Array.from({ length: poolSize }, () => createAudioPlayer(source))
+      // keepAudioSessionActive: true - without it, expo-audio tears the shared AVAudioSession
+      // down (with a ~100ms delay) once every pooled player finishes and rebuilds it fresh on the
+      // next play(). That teardown/rebuild is exactly the kind of per-press latency this pool
+      // exists to avoid, and it's most visible on short clips (a few tens of ms) where the
+      // session's own activation cost can eat into or outlast the clip itself. The session is a
+      // per-process singleton anyway, so there's no isolation benefit to letting each pooled
+      // player deactivate it independently - keep it warm for as long as the pool is mounted.
+      players = Array.from({ length: poolSize }, () => createAudioPlayer(source, { keepAudioSessionActive: true }))
       playersRef.current = players
       nextIndex.current = 0
     }, 0)
