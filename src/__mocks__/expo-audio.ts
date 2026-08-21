@@ -9,3 +9,5 @@ export const createAudioPlayer = jest.fn(() => ({
   seekTo: jest.fn().mockResolvedValue(undefined),
   remove: jest.fn()
 }))
+
+export const setAudioModeAsync = jest.fn().mockResolvedValue(undefined)

@@ -1,4 +1,4 @@
-import { type AudioPlayer, type AudioSource, createAudioPlayer } from 'expo-audio'
+import { type AudioPlayer, type AudioSource, createAudioPlayer, setAudioModeAsync } from 'expo-audio'
 import { useCallback, useEffect, useRef } from 'react'
 
 export type AudioPoolOptions = {
@@ -9,6 +9,21 @@ export type AudioPoolOptions = {
    * concurrently. Real allocation, not a fixed ceiling: `poolSize: 1` creates exactly one player.
    */
   poolSize?: number
+  /**
+   * Whether this pool configures the shared expo-audio session for UI sound effects the first
+   * time any pool mounts, via `setAudioModeAsync({ interruptionMode: 'mixWithOthers',
+   * playsInSilentMode: true })`. Without it, iOS defaults to a `.soloAmbient` session that stops
+   * the user's music/podcast and pays a session-negotiation delay on every press. Set to `false`
+   * on a pool if the host app already manages `setAudioModeAsync` itself elsewhere and no pool
+   * should touch it. Because the setting this gates is a process-wide singleton rather than
+   * something scoped to one pool, opting out is process-wide too: once any pool mounts with
+   * `configureAudioSession: false`, no pool (including ones that omit this option) will call
+   * `setAudioModeAsync` for the rest of the app's lifetime. This only protects a session that
+   * hasn't been configured yet, though - it can't undo a call that already happened because a
+   * default (`true`) pool mounted first, so put the opted-out pool as early in mount order as
+   * you can (e.g. alongside `FeedbackPressProvider`) if you rely on this. Default `true`.
+   */
+  configureAudioSession?: boolean
 }
 
 const DEFAULT_POOL_SIZE = 4
@@ -21,6 +36,31 @@ const MAX_POOL_SIZE = 16
 
 function clampPoolSize(size: number): number {
   return Math.min(MAX_POOL_SIZE, Math.max(1, Math.round(size)))
+}
+
+let audioSessionConfigured = false
+// Set (and left set) as soon as any pool mounts with `configureAudioSession: false`. Since
+// `audioSessionConfigured` is a process-wide, first-caller-wins singleton, a per-instance opt-out
+// can only be honored process-wide too - otherwise a later pool that omits the option would still
+// silently configure the session out from under the opted-out one. This can't protect a session
+// that's already been configured by an earlier default pool; it only suppresses configuration
+// that hasn't happened yet.
+let audioSessionAutoConfigureDisabled = false
+
+async function ensureAudioSessionConfigured() {
+  if (audioSessionConfigured || audioSessionAutoConfigureDisabled) return
+  audioSessionConfigured = true
+  try {
+    await setAudioModeAsync({ interruptionMode: 'mixWithOthers', playsInSilentMode: true })
+  } catch {
+    audioSessionConfigured = false
+  }
+}
+
+// Test-only escape hatch to reset the module-level singletons between tests.
+export function __resetAudioSessionConfiguredForTests() {
+  audioSessionConfigured = false
+  audioSessionAutoConfigureDisabled = false
 }
 
 // Deferred a tick via setTimeout, seekTo(0) before play() — expo-audio's play() blocks the
@@ -49,6 +89,9 @@ function triggerPlayback(player: AudioPlayer) {
  *
  * Returns a single `() => void` play function - call `useAudioPool` once per distinct clip, the
  * same way you'd call `useAudioPlayer` once per clip.
+ *
+ * Also configures the shared audio session by default - see `configureAudioSession` on
+ * `AudioPoolOptions`.
  */
 export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): () => void {
   const poolSize = clampPoolSize(options?.poolSize ?? DEFAULT_POOL_SIZE)
@@ -66,11 +109,23 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
   // mount anyway.
   useEffect(() => {
     let players: AudioPlayer[] = []
-    const timer = setTimeout(() => {
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      // Recorded synchronously, before any `await`, so that an opted-out pool's timer always
+      // marks the disable flag before a same-tick default pool's timer (which fires afterward,
+      // since same-delay `setTimeout` callbacks run in registration order) reaches its own
+      // `ensureAudioSessionConfigured` call.
+      if (options?.configureAudioSession === false) {
+        audioSessionAutoConfigureDisabled = true
+      }
+      if (options?.configureAudioSession !== false) {
+        await ensureAudioSessionConfigured()
+      }
+      if (cancelled) return
       // keepAudioSessionActive: true - without it, expo-audio tears the shared AVAudioSession
-      // down (with a ~100ms delay) once every pooled player finishes and rebuilds it fresh on the
-      // next play(). That teardown/rebuild is exactly the kind of per-press latency this pool
-      // exists to avoid, and it's most visible on short clips (a few tens of ms) where the
+      // down (with a ~100ms delay) once every pooled player finishes and rebuilds it fresh on
+      // the next play(). That teardown/rebuild is exactly the kind of per-press latency this
+      // pool exists to avoid, and it's most visible on short clips (a few tens of ms) where the
       // session's own activation cost can eat into or outlast the clip itself. The session is a
       // per-process singleton anyway, so there's no isolation benefit to letting each pooled
       // player deactivate it independently - keep it warm for as long as the pool is mounted.
@@ -79,6 +134,7 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
       nextIndex.current = 0
     }, 0)
     return () => {
+      cancelled = true
       clearTimeout(timer)
       players.forEach((player) => player.remove())
       playersRef.current = []

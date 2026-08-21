@@ -1,13 +1,15 @@
 import { act, renderHook } from '@testing-library/react'
 import * as audio from 'expo-audio'
 
-import { useAudioPool } from '../audio/useAudioPool'
+import { __resetAudioSessionConfiguredForTests, useAudioPool } from '../audio/useAudioPool'
 
 const mockedCreateAudioPlayer = audio.createAudioPlayer as jest.Mock
+const mockedSetAudioModeAsync = audio.setAudioModeAsync as jest.Mock
 
 beforeEach(() => {
   jest.clearAllMocks()
   jest.useFakeTimers()
+  __resetAudioSessionConfiguredForTests()
 })
 
 afterEach(() => {
@@ -133,5 +135,56 @@ describe('useAudioPool', () => {
 
     firstPoolPlayers.forEach((player) => expect(player.remove).toHaveBeenCalledTimes(1))
     expect(mockedCreateAudioPlayer).toHaveBeenCalledTimes(2 + 5)
+  })
+
+  describe('audio session configuration', () => {
+    it('configures the session exactly once on mount', async () => {
+      renderHook(() => useAudioPool('sound.wav'))
+      await flush()
+
+      expect(mockedSetAudioModeAsync).toHaveBeenCalledTimes(1)
+      expect(mockedSetAudioModeAsync).toHaveBeenCalledWith({ interruptionMode: 'mixWithOthers', playsInSilentMode: true })
+    })
+
+    it('only configures the session once across two separate pools', async () => {
+      renderHook(() => useAudioPool('sound.wav'))
+      renderHook(() => useAudioPool('other.wav'))
+      await flush()
+
+      expect(mockedSetAudioModeAsync).toHaveBeenCalledTimes(1)
+    })
+
+    it('skips the call when configureAudioSession is false, but still creates players', async () => {
+      renderHook(() => useAudioPool('sound.wav', { configureAudioSession: false, poolSize: 3 }))
+      await flush()
+
+      expect(mockedSetAudioModeAsync).not.toHaveBeenCalled()
+      expect(mockedCreateAudioPlayer).toHaveBeenCalledTimes(3)
+    })
+
+    it('poisons the guard process-wide once an opted-out pool mounts, so a later default pool does not override it', async () => {
+      renderHook(() => useAudioPool('sound.wav', { configureAudioSession: false }))
+      renderHook(() => useAudioPool('other.wav'))
+      await flush()
+
+      expect(mockedSetAudioModeAsync).not.toHaveBeenCalled()
+    })
+
+    it('cannot undo a configuration a default pool already triggered before the opt-out mounted', async () => {
+      renderHook(() => useAudioPool('sound.wav'))
+      renderHook(() => useAudioPool('other.wav', { configureAudioSession: false }))
+      await flush()
+
+      expect(mockedSetAudioModeAsync).toHaveBeenCalledTimes(1)
+    })
+
+    it('still creates players if setAudioModeAsync rejects', async () => {
+      mockedSetAudioModeAsync.mockRejectedValueOnce(new Error('boom'))
+
+      renderHook(() => useAudioPool('sound.wav', { poolSize: 2 }))
+      await flush()
+
+      expect(mockedCreateAudioPlayer).toHaveBeenCalledTimes(2)
+    })
   })
 })
