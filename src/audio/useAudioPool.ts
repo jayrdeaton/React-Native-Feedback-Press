@@ -139,7 +139,7 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
       players.forEach((player) => player.remove())
       playersRef.current = []
     }
-  }, [source, poolSize])
+  }, [source, poolSize, options?.configureAudioSession])
 
   return useCallback(() => {
     const players = playersRef.current

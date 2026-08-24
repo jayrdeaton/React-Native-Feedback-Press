@@ -60,17 +60,21 @@ export function useFeedbackHandlers<P extends object>(props: P, wiring: Feedback
   const contextSound: SoundConfig = useContext(SoundContext)
   const longPressFired = useRef(false)
   const wired = { ...props } as Record<string, unknown>
-  // Reserved props, not part of any wrapper's real prop type - read here (off `wired`, already
-  // cast loose, not off the generic `P`, which has no known keys for these) and deleted below so
-  // none of them ever reach the underlying Paper/native component as an unrecognized prop.
-  const soundDisabled = wired.soundDisabled === true
-  const hapticDisabled = wired.hapticDisabled === true
-  const exclusive = wired.exclusive === true
+  // Reserved props, not part of any wrapper's real prop type - read here (off `raw`, a loose view
+  // of `props` itself, which has no known keys for these) and deleted off `wired` below so none of
+  // them ever reach the underlying Paper/native component as an unrecognized prop. Read off `raw`
+  // rather than `wired` so these plain reads stay clear of the ref-touching closures assigned onto
+  // `wired` further down - otherwise the two get conflated as the same object by the compiler's ref
+  // analysis, which flags every read off `wired` as a possible ref access.
+  const raw = props as Record<string, unknown>
+  const soundDisabled = raw.soundDisabled === true
+  const hapticDisabled = raw.hapticDisabled === true
+  const exclusive = raw.exclusive === true
   // A component instance's own `sound` prop overrides the provider's ambient config for just
   // this press - e.g. a delete button wanting a distinct sound from the app-wide generic click,
   // without needing a second provider. Falls back to the provider's sound when omitted, which is
   // the common case.
-  const sound: SoundConfig = (wired.sound as SoundConfig | undefined) ?? contextSound
+  const sound: SoundConfig = (raw.sound as SoundConfig | undefined) ?? contextSound
   delete wired.soundDisabled
   delete wired.hapticDisabled
   delete wired.sound
