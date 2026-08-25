@@ -348,9 +348,11 @@ A global sound-enabled toggle, analogous to `useHapticSettings` for vibration. W
 
 ```ts
 type SoundSettings = {
-  enabled: boolean  // default: true
+  enabled: boolean  // default: true in production, false in dev/simulator builds (__DEV__)
 }
 ```
+
+The default is dev-aware so local development and automated testing don't play sound unexpectedly - production builds are unaffected. If your app computes its own initial value (e.g. from persisted storage, as in the Redux integration below), mirror this same `!__DEV__` fallback for a never-set/first-launch value rather than hardcoding `true`, so a fresh install in dev picks it up too.
 
 Read or update the setting from anywhere inside the provider:
 
