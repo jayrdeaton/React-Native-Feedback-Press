@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
+import React from 'react'
 import { Image as RNImage, Pressable as RNPressable, Switch as RNSwitch } from 'react-native'
 import * as Paper from 'react-native-paper'
-import React from 'react'
 
 import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { Button, Card, Chip, FAB, IconButton, SegmentedButtons, Switch, TouchableRipple } from '../index'
@@ -103,7 +103,7 @@ describe('Card', () => {
     const { container } = render(
       <Card onPress={jest.fn()}>
         <Card.Cover source={{ uri: 'https://example.com/cover.png' }} />
-        <Card.Title subtitle="Subtitle" title="Title" />
+        <Card.Title subtitle='Subtitle' title='Title' />
         <Card.Content>Body</Card.Content>
         <Card.Actions>
           <Button onPress={jest.fn()}>OK</Button>
@@ -124,7 +124,7 @@ describe('Card', () => {
       render(
         <Card>
           <Card.Cover source={{ uri: 'https://example.com/cover.png' }} />
-          <Card.Title title="Title" />
+          <Card.Title title='Title' />
           <Card.Content>Body</Card.Content>
           <Card.Actions>{null}</Card.Actions>
         </Card>,
@@ -137,7 +137,7 @@ describe('Card', () => {
 
 describe('IconButton', () => {
   it('renders a fallback glyph derived from the icon prop without paper injected', () => {
-    const { container } = render(<IconButton icon="star" onPress={jest.fn()} />, { wrapper: withoutPaper })
+    const { container } = render(<IconButton icon='star' onPress={jest.fn()} />, { wrapper: withoutPaper })
     expect(MockPressable).toHaveBeenCalled()
     expect(container.textContent).toBe('S')
   })
@@ -184,10 +184,7 @@ describe('Chip', () => {
 
 describe('TouchableRipple', () => {
   it('renders the plain-RN fallback without paper injected', () => {
-    const { container } = render(
-      <TouchableRipple onPress={jest.fn()}>Ripple</TouchableRipple>,
-      { wrapper: withoutPaper }
-    )
+    const { container } = render(<TouchableRipple onPress={jest.fn()}>Ripple</TouchableRipple>, { wrapper: withoutPaper })
     expect(MockPressable).toHaveBeenCalled()
     expect(container.textContent).toBe('Ripple')
   })
@@ -246,7 +243,14 @@ describe('SegmentedButtons', () => {
   it('renders one pressable segment per button without paper injected', () => {
     const onValueChange = jest.fn()
     const { container } = render(
-      <SegmentedButtons buttons={[{ label: 'Day', value: 'day' }, { label: 'Week', value: 'week' }]} onValueChange={onValueChange} value="day" />,
+      <SegmentedButtons
+        buttons={[
+          { label: 'Day', value: 'day' },
+          { label: 'Week', value: 'week' }
+        ]}
+        onValueChange={onValueChange}
+        value='day'
+      />,
       { wrapper: withoutPaper }
     )
     expect(MockPressable).toHaveBeenCalledTimes(2)

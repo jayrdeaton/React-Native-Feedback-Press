@@ -1,4 +1,4 @@
-const stub = (props: Record<string, unknown>) => null
+const stub = (_props: Record<string, unknown>) => null
 
 // Capture props so tests can inspect what handlers were wired
 export const Button = jest.fn(stub)

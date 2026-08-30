@@ -20,7 +20,10 @@ beforeEach(() => jest.clearAllMocks())
 // A stand-in for "some component from a library this package doesn't ship a wrapper for":
 // withFeedback is meant to work on exactly this kind of arbitrary component.
 type FakeButtonProps = { onLongPress?: () => void; onPress?: () => void; onPressIn?: () => void }
-const FakeButton = Object.assign(jest.fn((_props: FakeButtonProps) => null), { displayName: 'FakeButton' })
+const FakeButton = Object.assign(
+  jest.fn((_props: FakeButtonProps) => null),
+  { displayName: 'FakeButton' }
+)
 
 type FakeSwitchProps = { onValueChange?: (value: boolean) => void; value: boolean }
 const FakeSwitch = jest.fn((_props: FakeSwitchProps) => null)

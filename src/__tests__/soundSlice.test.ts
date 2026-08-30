@@ -1,5 +1,5 @@
-import { defaultSoundSettings } from '../SoundSettingsContext'
 import { soundActions, soundReducer } from '../redux/soundSlice'
+import { defaultSoundSettings } from '../SoundSettingsContext'
 
 describe('soundReducer', () => {
   it('returns default state when called with undefined', () => {

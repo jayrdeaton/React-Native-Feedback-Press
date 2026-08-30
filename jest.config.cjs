@@ -1,30 +1,16 @@
-/** @type {import('jest').Config} */
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  roots: ['<rootDir>/src'],
+module.exports = require('@infinitetoken/jest-config/react-native')({
   moduleNameMapper: {
     '^react-native$': '<rootDir>/src/__mocks__/react-native.ts',
     '^react-native-paper$': '<rootDir>/src/__mocks__/react-native-paper.ts',
     '^expo-audio$': '<rootDir>/src/__mocks__/expo-audio.ts',
     '^expo-haptics$': '<rootDir>/src/__mocks__/expo-haptics.ts'
   },
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        tsconfig: {
-          jsx: 'react-jsx',
-          lib: ['ES2020', 'DOM'],
-          module: 'CommonJS',
-          moduleResolution: 'node',
-          ignoreDeprecations: '5.0',
-          types: ['jest', 'node']
-        }
-      }
-    ]
-  },
-  testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.claude/worktrees/'],
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs']
-}
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.cjs'],
+  overrides: {
+    // The factory default already covers .tsx and excludes src/index.ts. The only real
+    // deviation this package needs: it has a second build entry (src/audio/index.ts, the
+    // ./audio subpath's own barrel), which the default can't know about — excluded the same
+    // way as the main barrel, since it's pure re-exports too.
+    collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/index.ts', '!src/audio/index.ts']
+  }
+})

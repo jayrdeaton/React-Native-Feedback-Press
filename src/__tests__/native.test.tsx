@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import * as haptics from 'expo-haptics'
-import { Platform, Pressable as RNPressable, TouchableHighlight as RNTouchableHighlight, TouchableOpacity as RNTouchableOpacity } from 'react-native'
 import React from 'react'
+import { Platform, Pressable as RNPressable, TouchableHighlight as RNTouchableHighlight, TouchableOpacity as RNTouchableOpacity } from 'react-native'
 
 import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { Pressable, TouchableHighlight, TouchableOpacity } from '../index'
@@ -13,13 +13,9 @@ const MockTouchableHighlight = RNTouchableHighlight as unknown as jest.Mock
 
 const mockEvent = {} as any
 
-const enabled = ({ children }: { children: React.ReactNode }) => (
-  <FeedbackPressProvider initialValue={{ vibrate: true }}>{children}</FeedbackPressProvider>
-)
+const enabled = ({ children }: { children: React.ReactNode }) => <FeedbackPressProvider initialValue={{ vibrate: true }}>{children}</FeedbackPressProvider>
 
-const disabled = ({ children }: { children: React.ReactNode }) => (
-  <FeedbackPressProvider initialValue={{ vibrate: false }}>{children}</FeedbackPressProvider>
-)
+const disabled = ({ children }: { children: React.ReactNode }) => <FeedbackPressProvider initialValue={{ vibrate: false }}>{children}</FeedbackPressProvider>
 
 const lastProps = (mock: jest.Mock) => mock.mock.calls[mock.mock.calls.length - 1][0]
 
@@ -43,7 +39,12 @@ describe('Pressable', () => {
 
   it('calls the original onPressIn alongside the haptic', () => {
     const onPressIn = jest.fn()
-    render(<Pressable onPress={jest.fn()} onPressIn={onPressIn}>{null}</Pressable>, { wrapper: enabled })
+    render(
+      <Pressable onPress={jest.fn()} onPressIn={onPressIn}>
+        {null}
+      </Pressable>,
+      { wrapper: enabled }
+    )
     lastProps(MockPressable).onPressIn(mockEvent)
     expect(onPressIn).toHaveBeenCalledWith(mockEvent)
   })

@@ -1,11 +1,11 @@
 import { render } from '@testing-library/react'
 import * as haptics from 'expo-haptics'
+import React from 'react'
 import { Platform } from 'react-native'
 import * as Paper from 'react-native-paper'
-import React from 'react'
 
 import { FeedbackPressProvider } from '../FeedbackPressProvider'
-import { Button, IconButton, TouchableRipple, Card, AppbarAction, AppbarBackAction, Chip, FAB, Checkbox, Switch, SegmentedButtons } from '../index'
+import { AppbarAction, AppbarBackAction, Button, Card, Checkbox, Chip, FAB, IconButton, SegmentedButtons, Switch, TouchableRipple } from '../index'
 import type { PaperModuleShape } from '../PaperContext'
 
 const mockedHaptics = haptics as jest.Mocked<typeof haptics>
@@ -63,7 +63,12 @@ describe('Button', () => {
 
   it('calls the original onPressIn alongside the haptic', () => {
     const onPressIn = jest.fn()
-    render(<Button onPress={jest.fn()} onPressIn={onPressIn}>{null}</Button>, { wrapper: enabled })
+    render(
+      <Button onPress={jest.fn()} onPressIn={onPressIn}>
+        {null}
+      </Button>,
+      { wrapper: enabled }
+    )
     lastProps(MockButton).onPressIn(mockEvent)
     expect(onPressIn).toHaveBeenCalledWith(mockEvent)
   })
@@ -99,7 +104,7 @@ describe('Button', () => {
 
 describe('IconButton', () => {
   it('fires selection on onPressIn', () => {
-    render(<IconButton icon="star" onPress={jest.fn()} />, { wrapper: enabled })
+    render(<IconButton icon='star' onPress={jest.fn()} />, { wrapper: enabled })
     lastProps(MockIconButton).onPressIn(mockEvent)
     expect(mockedHaptics.selectionAsync).toHaveBeenCalledTimes(1)
   })
@@ -142,14 +147,14 @@ describe('AppbarBackAction', () => {
 describe('AppbarAction', () => {
   it('fires selection on onPress (no onPressIn: same as AppbarBackAction, its own underlying implementation)', () => {
     const onPress = jest.fn()
-    render(<AppbarAction icon="menu" onPress={onPress} />, { wrapper: enabled })
+    render(<AppbarAction icon='menu' onPress={onPress} />, { wrapper: enabled })
     lastProps(MockAction).onPress()
     expect(mockedHaptics.selectionAsync).toHaveBeenCalledTimes(1)
     expect(onPress).toHaveBeenCalled()
   })
 
   it('does not fire haptic when onPress is not provided', () => {
-    render(<AppbarAction icon="menu" />, { wrapper: enabled })
+    render(<AppbarAction icon='menu' />, { wrapper: enabled })
     lastProps(MockAction).onPress?.()
     expect(mockedHaptics.selectionAsync).not.toHaveBeenCalled()
   })
@@ -173,7 +178,7 @@ describe('Chip', () => {
 describe('FAB', () => {
   it('fires selection on onPress (no onPressIn exposed by Paper)', () => {
     const onPress = jest.fn()
-    render(<FAB icon="plus" onPress={onPress} />, { wrapper: enabled })
+    render(<FAB icon='plus' onPress={onPress} />, { wrapper: enabled })
     lastProps(MockFAB).onPress(mockEvent)
     expect(mockedHaptics.selectionAsync).toHaveBeenCalledTimes(1)
     expect(onPress).toHaveBeenCalledWith(mockEvent)
@@ -183,14 +188,14 @@ describe('FAB', () => {
 describe('Checkbox', () => {
   it('fires selection on onPress (no onPressIn exposed by Paper)', () => {
     const onPress = jest.fn()
-    render(<Checkbox status="unchecked" onPress={onPress} />, { wrapper: enabled })
+    render(<Checkbox status='unchecked' onPress={onPress} />, { wrapper: enabled })
     lastProps(MockCheckbox).onPress(mockEvent)
     expect(mockedHaptics.selectionAsync).toHaveBeenCalledTimes(1)
     expect(onPress).toHaveBeenCalledWith(mockEvent)
   })
 
   it('does not fire haptic when onPress is not provided', () => {
-    render(<Checkbox status="unchecked" />, { wrapper: enabled })
+    render(<Checkbox status='unchecked' />, { wrapper: enabled })
     lastProps(MockCheckbox).onPress?.(mockEvent)
     expect(mockedHaptics.selectionAsync).not.toHaveBeenCalled()
   })
@@ -215,14 +220,14 @@ describe('Switch', () => {
 describe('SegmentedButtons', () => {
   it('fires selection on onValueChange (no onPress/onPressIn: each internal button is a private Paper implementation detail)', () => {
     const onValueChange = jest.fn()
-    render(<SegmentedButtons value="a" onValueChange={onValueChange} buttons={[]} />, { wrapper: enabled })
+    render(<SegmentedButtons value='a' onValueChange={onValueChange} buttons={[]} />, { wrapper: enabled })
     lastProps(MockSegmentedButtons).onValueChange('b')
     expect(mockedHaptics.selectionAsync).toHaveBeenCalledTimes(1)
     expect(onValueChange).toHaveBeenCalledWith('b')
   })
 
   it('does not fire haptic when onValueChange is not provided', () => {
-    render(<SegmentedButtons value="a" buttons={[]} />, { wrapper: enabled })
+    render(<SegmentedButtons value='a' buttons={[]} />, { wrapper: enabled })
     lastProps(MockSegmentedButtons).onValueChange?.('b')
     expect(mockedHaptics.selectionAsync).not.toHaveBeenCalled()
   })

@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react'
 import * as haptics from 'expo-haptics'
+import React from 'react'
 import { Platform, Pressable as RNPressable } from 'react-native'
 import * as Paper from 'react-native-paper'
-import React from 'react'
 
 import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { Button, Card, FAB, Pressable } from '../index'
@@ -163,19 +163,19 @@ describe('exclusive - Card (zero-arg onLongPress)', () => {
 
 describe('exclusive - FAB (onPress-sourced selection normally, no onPressIn)', () => {
   it('does not fire selection immediately on onPress', () => {
-    render(<FAB exclusive icon="plus" onPress={jest.fn()} />, { wrapper: enabled })
+    render(<FAB exclusive icon='plus' onPress={jest.fn()} />, { wrapper: enabled })
     lastProps(MockFAB).onPress?.(mockEvent)
     expect(mockedHaptics.selectionAsync).not.toHaveBeenCalled()
   })
 
   it('fires selection on onPressOut for a short press', () => {
-    render(<FAB exclusive icon="plus" onPress={jest.fn()} />, { wrapper: enabled })
+    render(<FAB exclusive icon='plus' onPress={jest.fn()} />, { wrapper: enabled })
     lastProps(MockFAB).onPressOut(mockEvent)
     expect(mockedHaptics.selectionAsync).toHaveBeenCalledTimes(1)
   })
 
   it('fires only notification once onLongPress escalates, suppressing the later onPressOut selection', () => {
-    render(<FAB exclusive icon="plus" onPress={jest.fn()} onLongPress={jest.fn()} />, { wrapper: enabled })
+    render(<FAB exclusive icon='plus' onPress={jest.fn()} onLongPress={jest.fn()} />, { wrapper: enabled })
     lastProps(MockFAB).onLongPress(mockEvent)
     lastProps(MockFAB).onPressOut(mockEvent)
     expect(mockedHaptics.notificationAsync).toHaveBeenCalledTimes(1)

@@ -51,9 +51,8 @@
     "!src/__mocks__"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/audio/index.ts --format cjs,esm --dts --clean",
-    "build:watch": "tsup src/index.ts src/audio/index.ts --format cjs,esm --dts --watch",
-    "ci": "npm run lint && npm test && npm run typecheck && npm run build",
+    "build": "tsup",
+    "build:watch": "tsup --watch",
     "fix": "eslint --fix",
     "lint": "eslint",
     "prepublishOnly": "npm run build",
@@ -64,12 +63,14 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "typecheck": "tsc --noEmit",
-    "preversion": "npm run ci"
+    "verify": "npm run lint && npm test && npm run typecheck && npm run build",
+    "preversion": "npm run verify"
   },
   "prettier": "@infinitetoken/eslint-config/prettier",
   "devDependencies": {
-    "@infinitetoken/eslint-config": "^0.1.4",
-    "@infinitetoken/tsconfig": "^0.1.1",
+    "@infinitetoken/eslint-config": "^0.1.8",
+    "@infinitetoken/jest-config": "^0.2.0",
+    "@infinitetoken/tsconfig": "^0.3.0",
     "@reduxjs/toolkit": "^2.12.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
@@ -87,8 +88,6 @@
     "react-dom": "^19.0.0",
     "react-native": "^0.76.0",
     "react-native-paper": "^5.12.0",
-    "ts-jest": "^29.4.9",
-    "ts-node": "^10.9.2",
     "tsup": "^8.0.0",
     "typescript": "^6.0.3"
   },
