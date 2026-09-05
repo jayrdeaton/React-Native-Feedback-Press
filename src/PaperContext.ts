@@ -293,6 +293,12 @@ export type PaperModuleShape = {
   Chip: ComponentType<ChipProps>
   FAB: ComponentType<FABProps>
   IconButton: ComponentType<IconButtonProps>
+  // Only `.Host` is actually used internally (FeedbackPressProvider wraps its own children in it -
+  // see that file's comment for why), but the bare component is included too so this type matches
+  // Paper's real module shape exactly, the same completeness every other entry here aims for.
+  Portal: ComponentType<{ children: ReactNode }> & {
+    Host: ComponentType<{ children: ReactNode }>
+  }
   // Paper's real SegmentedButtons type is a multiSelect-discriminated union (single-select:
   // `{ value: string; onValueChange: (v: string) => void }`, multi-select:
   // `{ value: string[]; multiSelect: true; onValueChange: (v: string[]) => void }`) that the
