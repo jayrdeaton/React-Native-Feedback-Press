@@ -1,9 +1,9 @@
-import { type ReactNode, useCallback, useContext, useState } from 'react'
+import { type ReactNode, useContext } from 'react'
 
-import { defaultHapticSettings, type HapticSettings, HapticSettingsContext } from './HapticSettingsContext'
+import { type HapticSettings, HapticSettingsContext, HapticSettingsProvider } from './HapticSettingsContext'
 import { PaperContext, type PaperModuleShape } from './PaperContext'
 import { type SoundConfig, SoundContext } from './SoundContext'
-import { defaultSoundSettings, type SoundSettings, SoundSettingsContext } from './SoundSettingsContext'
+import { type SoundSettings, SoundSettingsContext, SoundSettingsProvider } from './SoundSettingsContext'
 
 const EMPTY_SOUND: SoundConfig = {}
 
@@ -22,28 +22,6 @@ export type FeedbackPressProviderProps = {
 }
 
 export function FeedbackPressProvider({ children, initialValue, onChange, paper, sound, soundInitialValue, onSoundChange }: FeedbackPressProviderProps) {
-  const [settings, setSettings] = useState<HapticSettings>(() => ({ ...defaultHapticSettings, ...initialValue }))
-  const set = useCallback(
-    (patch: Partial<HapticSettings>) => {
-      setSettings((prev) => {
-        const next = { ...prev, ...patch }
-        onChange?.(next)
-        return next
-      })
-    },
-    [onChange]
-  )
-  const [soundSettings, setSoundSettings] = useState<SoundSettings>(() => ({ ...defaultSoundSettings, ...soundInitialValue }))
-  const setSoundSetting = useCallback(
-    (patch: Partial<SoundSettings>) => {
-      setSoundSettings((prev) => {
-        const next = { ...prev, ...patch }
-        onSoundChange?.(next)
-        return next
-      })
-    },
-    [onSoundChange]
-  )
   // react-native-paper's own Portal (what every Dialog/Menu/Snackbar renders through) doesn't
   // render its content in place: it hands children to the nearest Portal.Host's manager via an
   // imperative mount() call, which re-renders them as that host's own child - bypassing whatever
@@ -63,13 +41,13 @@ export function FeedbackPressProvider({ children, initialValue, onChange, paper,
   // renders a Dialog/Menu/Snackbar pays for one extra (flex: 1) View wrapper and nothing else.
   const content = paper ? <paper.Portal.Host>{children}</paper.Portal.Host> : children
   return (
-    <HapticSettingsContext.Provider value={{ settings, set }}>
-      <SoundSettingsContext.Provider value={{ settings: soundSettings, set: setSoundSetting }}>
+    <HapticSettingsProvider initialValue={initialValue} onChange={onChange}>
+      <SoundSettingsProvider initialValue={soundInitialValue} onChange={onSoundChange}>
         <PaperContext.Provider value={paper ?? null}>
           <SoundContext.Provider value={sound ?? EMPTY_SOUND}>{content}</SoundContext.Provider>
         </PaperContext.Provider>
-      </SoundSettingsContext.Provider>
-    </HapticSettingsContext.Provider>
+      </SoundSettingsProvider>
+    </HapticSettingsProvider>
   )
 }
 

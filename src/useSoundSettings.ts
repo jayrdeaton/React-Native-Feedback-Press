@@ -1,5 +1,3 @@
-import { useContext } from 'react'
+import { useSoundSettingsInternal } from './SoundSettingsContext'
 
-import { SoundSettingsContext } from './SoundSettingsContext'
-
-export const useSoundSettings = () => useContext(SoundSettingsContext)
+export const useSoundSettings = useSoundSettingsInternal

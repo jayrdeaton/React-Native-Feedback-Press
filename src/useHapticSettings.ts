@@ -1,5 +1,3 @@
-import { useContext } from 'react'
+import { useHapticSettingsInternal } from './HapticSettingsContext'
 
-import { HapticSettingsContext } from './HapticSettingsContext'
-
-export const useHapticSettings = () => useContext(HapticSettingsContext)
+export const useHapticSettings = useHapticSettingsInternal

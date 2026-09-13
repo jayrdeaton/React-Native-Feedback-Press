@@ -1,4 +1,4 @@
-import { createContext } from 'react'
+import { createSettingsContext, type SettingsContextValue } from '@rific/core'
 
 export type SoundSettings = {
   enabled: boolean
@@ -12,12 +12,13 @@ export const defaultSoundSettings: SoundSettings = {
   enabled: !__DEV__
 }
 
-export type SoundSettingsContextType = {
-  settings: SoundSettings
-  set: (patch: Partial<SoundSettings>) => void
-}
+export type SoundSettingsContextType = SettingsContextValue<SoundSettings>
 
-export const SoundSettingsContext = createContext<SoundSettingsContextType>({
-  settings: defaultSoundSettings,
-  set: () => {}
-})
+// Single createSettingsContext() call, shared by FeedbackPressProvider.tsx and
+// useSoundSettings.ts (each just re-exports the relevant piece under its original name) so
+// there's exactly one Context instance backing all three files, same as before this migration.
+const soundSettingsContext = createSettingsContext<SoundSettings>(defaultSoundSettings)
+
+export const SoundSettingsContext = soundSettingsContext.Context
+export const SoundSettingsProvider = soundSettingsContext.Provider
+export const useSoundSettingsInternal = soundSettingsContext.useSettings
