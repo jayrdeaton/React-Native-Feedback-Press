@@ -75,8 +75,8 @@ src/
       fallbackStyles.ts            - fallbackColors + StyleSheet shared by every plain-RN fallback above (functional, not a Material Design reproduction)
       renderFallbackIcon.tsx        - renders Paper's `icon` prop shape (a name string or render function) without react-native-paper or an icon font installed
   redux/
-    hapticSlice.ts              - hand-rolled reducer/actions for HapticSettings, no @reduxjs/toolkit dependency - action-type/behavior parity with a createSlice equivalent, works with RTK, vanilla Redux, or none
-    soundSlice.ts               - hand-rolled reducer/actions for SoundSettings, same no-RTK-dependency design
+    hapticSlice.ts              - thin binding over @rific/core's createSettingsSlice('haptic', {initialState: defaultHapticSettings}) factory - no @reduxjs/toolkit dependency, works with RTK, vanilla Redux, or none. Corrected 2026-09-18: this used to be a hand-rolled reducer/actions pair; it was migrated onto the shared factory in an earlier pass but this doc was never updated to match - see @rific/core's own CLAUDE.md for the factory itself
+    soundSlice.ts               - same thin binding, createSettingsSlice('sound', {initialState: defaultSoundSettings})
   __mocks__/
     react-native.ts              - jest manual mock: View/Text/Image/Pressable/Switch/Touchable*, Platform (OS: 'ios'), Vibration.vibrate, StyleSheet passthrough
     react-native-paper.ts         - jest manual mock: every Paper component this package wraps, as jest.fn() stubs that capture props for assertions

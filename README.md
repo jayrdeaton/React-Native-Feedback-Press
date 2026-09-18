@@ -342,6 +342,20 @@ Pass `configureAudioSession: false` on a given pool to opt it out, for a host ap
 
 `expo-audio` is a peer dependency of this subpath only, not of the package's main entry - haptics-only consumers never need it installed, and Metro never traces it unless you import from `@rific/feedback-press/audio` yourself.
 
+#### `useGatedAudioPool`
+
+`useAudioPool` above always plays - it has no idea about `useSoundSettings`' enabled toggle, because the `sound` config passed to `<FeedbackPressProvider>` and to each wrapper's per-instance `sound` prop is already gated on it internally (see `useFeedbackHandlers`' `fire`). That gate doesn't reach gameplay/ambient SFX played outside that pipeline - a goal horn, a countdown beep, anything triggered directly from game logic rather than a `Button`/`Pressable` press. `useGatedAudioPool` is `useAudioPool` pre-wired to the same `useSoundSettings` toggle, for exactly that case:
+
+```tsx
+import { useGatedAudioPool } from '@rific/feedback-press/audio'
+
+const playGoalHorn = useGatedAudioPool(require('./assets/goal.wav'))
+// Calling playGoalHorn() is a no-op while the user's sound setting is off - no need to check
+// settings.enabled yourself before calling it.
+```
+
+Same signature and `options` (`poolSize`, `configureAudioSession`) as `useAudioPool` - call once per clip, same as its ungated sibling.
+
 ### `useSoundSettings`
 
 A global sound-enabled toggle, analogous to `useHapticSettings` for vibration. When `enabled` is `false`, every `sound` callback (provider-wide and per-instance) is suppressed regardless of `soundDisabled`; haptics are unaffected.
@@ -403,6 +417,36 @@ export function App() {
 ```
 
 Available actions: `soundActions.initialize(settings)` (replace all), `soundActions.setEnabled(boolean)`.
+
+### `useFeedbackBridgeProps`: bridging both Redux slices at once
+
+The two Redux integration examples above each wire one slice by hand. An app using both (the common case - most apps toggle haptics and sound together in one settings screen) ends up with a "FeedbackBridge" component that re-derives the same five-prop shape (`initialValue`, `onChange`, `soundInitialValue`, `onSoundChange`, `sound`) every time. `useFeedbackBridgeProps` collects them for you:
+
+```tsx
+import { FeedbackPressProvider, hapticActions, soundActions, useFeedbackBridgeProps } from '@rific/feedback-press'
+import { useAudioPool } from '@rific/feedback-press/audio'
+import { useDispatch, useSelector } from 'react-redux'
+
+const FeedbackBridge = ({ children }) => {
+  const haptic = useSelector((state) => state.haptic)
+  const sound = useSelector((state) => state.sound)
+  const dispatch = useDispatch()
+  const playSelection = useAudioPool(require('./assets/select.wav'))
+  const playNotification = useAudioPool(require('./assets/notification.wav'))
+
+  const bridgeProps = useFeedbackBridgeProps({
+    initialValue: haptic,
+    onChange: (next) => dispatch(hapticActions.initialize(next)),
+    soundInitialValue: sound,
+    onSoundChange: (next) => dispatch(soundActions.initialize(next)),
+    sound: { selection: playSelection, notification: playNotification }
+  })
+
+  return <FeedbackPressProvider {...bridgeProps}>{children}</FeedbackPressProvider>
+}
+```
+
+Takes plain values and callbacks rather than a `dispatch` function or any Redux-specific type - it has no opinion on your store's shape, or that you're using Redux at all. `paper` and `children` aren't part of its input: pass `paper` directly to `<FeedbackPressProvider>` alongside the spread `bridgeProps`, same as `children`.
 
 ### Per-instance overrides
 

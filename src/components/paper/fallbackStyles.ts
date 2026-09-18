@@ -51,9 +51,6 @@ export const fallbackStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700'
   },
-  disabled: {
-    opacity: 0.5
-  },
   checkboxBox: {
     alignItems: 'center',
     borderColor: fallbackColors.tint,
@@ -83,6 +80,9 @@ export const fallbackStyles = StyleSheet.create({
   },
   chipText: {
     color: fallbackColors.text
+  },
+  disabled: {
+    opacity: 0.5
   },
   fab: {
     alignItems: 'center',
