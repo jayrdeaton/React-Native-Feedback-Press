@@ -210,6 +210,8 @@ export function App() {
 
 Available actions: `hapticActions.initialize(settings)` (replace all), `hapticActions.setVibrate(boolean)`.
 
+Dispatching `hapticActions` or `soundActions` from anywhere in the app reaches the Provider because `initialValue` is live after mount: the Provider adopts any value that changes. That needs @rific/core 0.3.0 or later. With @rific/core 0.2.1 or older, `initialValue` is only read at mount, so write through the Provider's own setters instead.
+
 ## `useVibration`
 
 ```ts
