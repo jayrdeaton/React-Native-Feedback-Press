@@ -143,7 +143,7 @@ describe('useAudioPool', () => {
       await flush()
 
       expect(mockedSetAudioModeAsync).toHaveBeenCalledTimes(1)
-      expect(mockedSetAudioModeAsync).toHaveBeenCalledWith({ interruptionMode: 'mixWithOthers', playsInSilentMode: true })
+      expect(mockedSetAudioModeAsync).toHaveBeenCalledWith({ interruptionMode: 'mixWithOthers', playsInSilentMode: false })
     })
 
     it('only configures the session once across two separate pools', async () => {

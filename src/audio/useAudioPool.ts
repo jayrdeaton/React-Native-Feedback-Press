@@ -12,8 +12,10 @@ export type AudioPoolOptions = {
   /**
    * Whether this pool configures the shared expo-audio session for UI sound effects the first
    * time any pool mounts, via `setAudioModeAsync({ interruptionMode: 'mixWithOthers',
-   * playsInSilentMode: true })`. Without it, iOS defaults to a `.soloAmbient` session that stops
-   * the user's music/podcast and pays a session-negotiation delay on every press. Set to `false`
+   * playsInSilentMode: false })`, which iOS maps to the `.ambient` category: sound effects mix
+   * with the user's music/podcast and go quiet when the Ring/Silent switch is on, the standard
+   * behavior for game and UI sounds. Without it, iOS defaults to a `.soloAmbient` session that
+   * stops the user's music/podcast and pays a session-negotiation delay on every press. Set to `false`
    * on a pool if the host app already manages `setAudioModeAsync` itself elsewhere and no pool
    * should touch it. Because the setting this gates is a process-wide singleton rather than
    * something scoped to one pool, opting out is process-wide too: once any pool mounts with
@@ -51,7 +53,7 @@ async function ensureAudioSessionConfigured() {
   if (audioSessionConfigured || audioSessionAutoConfigureDisabled) return
   audioSessionConfigured = true
   try {
-    await setAudioModeAsync({ interruptionMode: 'mixWithOthers', playsInSilentMode: true })
+    await setAudioModeAsync({ interruptionMode: 'mixWithOthers', playsInSilentMode: false })
   } catch {
     audioSessionConfigured = false
   }

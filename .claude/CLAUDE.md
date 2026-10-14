@@ -14,7 +14,7 @@ Part of the `@rific` package ecosystem. Published at https://www.npmjs.com/packa
 npm run lint         # ESLint check
 npm run fix           # Auto-fix lint issues
 npm run typecheck    # TypeScript type check (tsc --noEmit)
-npm test             # Jest (164 tests)
+npm test             # Jest (172 tests)
 npm run test:watch   # Jest in watch mode
 npm run build        # tsup, outputs CJS + ESM + types to dist/ (two entries: index.ts, audio/index.ts)
 npm run build:watch  # tsup in watch mode
@@ -41,8 +41,9 @@ npm run release:major   # npm version major && git push --follow-tags
 src/
   index.ts                    - main public exports (Provider, hooks, wrapper components, redux slices)
   audio/
-    index.ts                  - public exports for the optional `./audio` subpath (useAudioPool)
-    useAudioPool.ts            - round-robins presses across a small pool of expo-audio AudioPlayers so a fast repeat press never races a still-playing seekTo/play; lazily configures the shared (process-wide) audio session on first mount
+    index.ts                  - public exports for the optional `./audio` subpath (useAudioPool, useGatedAudioPool)
+    useAudioPool.ts            - round-robins presses across a small pool of expo-audio AudioPlayers so a fast repeat press never races a still-playing seekTo/play; lazily configures the shared (process-wide) audio session on first mount as `{ interruptionMode: 'mixWithOthers', playsInSilentMode: false }` (iOS `.ambient`: mixes with the user's music and is muted by the Ring/Silent switch)
+    useGatedAudioPool.ts       - useAudioPool gated on the useSoundSettings `enabled` toggle, for gameplay SFX that play outside the button-press pipeline
   FeedbackPressProvider.tsx    - Provider: composes HapticSettingsContext + SoundSettingsContext + PaperContext + SoundContext into one tree; useFeedbackPressContext/useFeedbackPressSoundContext read the resolved enabled flags
   HapticSettingsContext.ts     - HapticSettings type ({ vibrate }), defaultHapticSettings, and its React context
   SoundContext.ts              - SoundConfig type ({ selection?, notification? }) and its React context - the ambient app-supplied sound callbacks
@@ -103,6 +104,7 @@ src/
 
 `src/audio/index.ts` (`@rific/feedback-press/audio` subpath):
 - `AudioPoolOptions`, `useAudioPool(source, options?)`: pooled expo-audio playback hook that returns a single `() => void` trigger function
+- `useGatedAudioPool(source, options?)`: the same, but a no-op while the sound setting is off
 
 ## Peer Dependencies
 
@@ -116,7 +118,7 @@ src/
 
 - Framework: Jest + ts-jest (via `@infinitetoken/jest-config/react-native`), jsdom environment
 - Mocks in `src/__mocks__/` for `react-native`, `react-native-paper`, `expo-haptics`, `expo-audio`
-- 164 tests across 13 suites in `src/__tests__/`
+- 172 tests across 15 suites in `src/__tests__/`
 - Coverage clears the fleet's 70%×4 default with real margin - measured 94.97/83.15/92.3/96.63% (statements/branches/functions/lines) as of 2026-08-30; no local `coverageThreshold` override
 
 ## Code Style
