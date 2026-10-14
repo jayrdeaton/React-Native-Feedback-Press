@@ -63,7 +63,7 @@ export function __resetAudioSessionConfiguredForTests() {
   audioSessionAutoConfigureDisabled = false
 }
 
-// Deferred a tick via setTimeout, seekTo(0) before play() — expo-audio's play() blocks the
+// Deferred a tick via setTimeout, seekTo(0) before play() - expo-audio's play() blocks the
 // native UI thread synchronously on Android, so firing it inline from a press handler adds that
 // round-trip latency to the very state update the press triggers. seekTo(0) restarts a clip
 // that's already playing or finished instead of no-oping.

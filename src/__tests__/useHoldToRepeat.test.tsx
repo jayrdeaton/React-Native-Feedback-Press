@@ -55,7 +55,7 @@ describe('useHoldToRepeat', () => {
     unmount()
   })
 
-  it('stops on onPressOut — no further calls no matter how long afterward', async () => {
+  it('stops on onPressOut - no further calls no matter how long afterward', async () => {
     const action = jest.fn()
     const { result, unmount } = renderHook(() => useHoldToRepeat(action, REPEAT_MS), { wrapper })
 
@@ -102,7 +102,7 @@ describe('useHoldToRepeat', () => {
   // See useHoldToRepeat's own comment for the real, physical-hold bug this reproduces: a plain
   // closure over `action` inside setInterval never picks up a later render's fresh version, so
   // every tick after the first silently reran the exact same stale computation. A static
-  // jest.fn() alone can't catch this — calling the same stale one over and over looks identical
+  // jest.fn() alone can't catch this - calling the same stale one over and over looks identical
   // to calling a fresh one. This rerenders the hook with a *different* action mid-hold (exactly
   // what a real useCallback keyed on changing state does every step) and asserts the repeat picks
   // up the new one, not the one closed over when the hold started.
@@ -151,7 +151,7 @@ describe('useHoldToRepeat', () => {
   // plausibly double-fire it) must not leak the first interval - start() calls stop() first, the
   // same idempotent-start fix as the keyed hook's own equivalent test below. Without that guard,
   // the first interval would survive forever, uncontactable by any future onPressOut/unmount.
-  it('a second onLongPress before onPressOut does not leak the first interval — onPressOut fully silences it', async () => {
+  it('a second onLongPress before onPressOut does not leak the first interval - onPressOut fully silences it', async () => {
     const action = jest.fn()
     const { result, unmount } = renderHook(() => useHoldToRepeat(action, REPEAT_MS), { wrapper })
 
@@ -314,7 +314,7 @@ describe('useHoldToRepeat', () => {
     })
 
     // usePulse's returned closure is fresh every render (see useHoldToRepeat.ts), threaded through
-    // latestPulse via the same ref+effect pattern latestAction uses for a changing action — this is
+    // latestPulse via the same ref+effect pattern latestAction uses for a changing action - this is
     // the pulse-side twin of "keeps calling whichever action is current" above, closing the same
     // stale-closure gap for feedback options instead of the action itself.
     it('picks up new options as they change identity mid-hold, not the ones closed over when the hold started', () => {
@@ -366,9 +366,9 @@ describe('useHoldToRepeatByKey', () => {
   })
 
   // The whole reason this hook exists over reusing useHoldToRepeat once per target (see its own
-  // comment) — two independently-held keys must keep entirely separate timers, neither stopping
+  // comment) - two independently-held keys must keep entirely separate timers, neither stopping
   // nor restarting the other's.
-  it('keeps two different keys repeating independently — releasing one leaves the other running', async () => {
+  it('keeps two different keys repeating independently - releasing one leaves the other running', async () => {
     const action = jest.fn()
     const { result, unmount } = renderHook(() => useHoldToRepeatByKey(action, REPEAT_MS), { wrapper })
 
@@ -393,7 +393,7 @@ describe('useHoldToRepeatByKey', () => {
     unmount()
   })
 
-  it('stops on onPressOut for the released key — no further calls no matter how long afterward', async () => {
+  it('stops on onPressOut for the released key - no further calls no matter how long afterward', async () => {
     const action = jest.fn()
     const { result, unmount } = renderHook(() => useHoldToRepeatByKey(action, REPEAT_MS), { wrapper })
 
@@ -445,10 +445,10 @@ describe('useHoldToRepeatByKey', () => {
     expect(action).toHaveBeenCalledTimes(callsBeforeUnmount)
   })
 
-  // Keyed twin of the plain hook's own "second onLongPress before onPressOut" test above — Map.set
+  // Keyed twin of the plain hook's own "second onLongPress before onPressOut" test above - Map.set
   // would otherwise silently overwrite a still-running key's interval id the same way a plain ref
   // assignment would, orphaning the first interval permanently.
-  it('a second onLongPress for the same still-held key does not leak the first interval — onPressOut fully silences it', async () => {
+  it('a second onLongPress for the same still-held key does not leak the first interval - onPressOut fully silences it', async () => {
     const action = jest.fn()
     const { result, unmount } = renderHook(() => useHoldToRepeatByKey(action, REPEAT_MS), { wrapper })
 

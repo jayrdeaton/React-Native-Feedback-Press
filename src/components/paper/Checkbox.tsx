@@ -17,7 +17,7 @@ export const Checkbox = (props: CheckboxProps) => {
     <Pressable onPress={wired.onPress}>
       <View style={fallbackStyles.checkboxBox}>
         {status === 'checked' ? <Text style={fallbackStyles.checkboxMark}>✓</Text> : null}
-        {status === 'indeterminate' ? <Text style={fallbackStyles.checkboxMark}>–</Text> : null}
+        {status === 'indeterminate' ? <Text style={fallbackStyles.checkboxMark}>-</Text> : null}
       </View>
     </Pressable>
   )

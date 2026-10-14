@@ -117,7 +117,7 @@ src/
 - Framework: Jest + ts-jest (via `@infinitetoken/jest-config/react-native`), jsdom environment
 - Mocks in `src/__mocks__/` for `react-native`, `react-native-paper`, `expo-haptics`, `expo-audio`
 - 164 tests across 13 suites in `src/__tests__/`
-- Coverage clears the fleet's 70%×4 default with real margin — measured 94.97/83.15/92.3/96.63% (statements/branches/functions/lines) as of 2026-08-30; no local `coverageThreshold` override
+- Coverage clears the fleet's 70%×4 default with real margin - measured 94.97/83.15/92.3/96.63% (statements/branches/functions/lines) as of 2026-08-30; no local `coverageThreshold` override
 
 ## Code Style
 

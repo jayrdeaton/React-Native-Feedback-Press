@@ -19,7 +19,7 @@ const CardComponent = (props: CardProps) => {
 
   // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Only wraps
   // in a Pressable when the card is actually interactive, same as every other wrapper here.
-  // onPressOut/delayLongPress forwarded alongside onLongPress/onPress/onPressIn — see
+  // onPressOut/delayLongPress forwarded alongside onLongPress/onPress/onPressIn - see
   // Button.tsx's own comment for why (useHoldToRepeat's onPressOut is what stops its repeat
   // interval on release).
   if (!(wired.onPress || wired.onLongPress)) return <View style={fallbackStyles.card}>{children}</View>

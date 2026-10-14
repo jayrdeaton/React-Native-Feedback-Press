@@ -244,9 +244,9 @@ On iOS, methods use `expo-haptics` native APIs. On Android, they fall back to `V
 
 ## `useHoldToRepeat`
 
-For a long-press-and-hold control that should keep firing for as long as it's held — a stepper FAB, a randomize button, anything with a "do it again, and again" gesture — rather than a single one-shot `onLongPress`. Fires `action` once immediately, then again every `repeatMs` for as long as the hold continues, alongside a `selection`/`notification` pulse (haptic and, if configured, sound) on **every** one of those firings, not just the first.
+For a long-press-and-hold control that should keep firing for as long as it's held - a stepper FAB, a randomize button, anything with a "do it again, and again" gesture - rather than a single one-shot `onLongPress`. Fires `action` once immediately, then again every `repeatMs` for as long as the hold continues, alongside a `selection`/`notification` pulse (haptic and, if configured, sound) on **every** one of those firings, not just the first.
 
-Component-agnostic: `useHoldToRepeat` just returns plain `onLongPress`/`onPressOut` callbacks, so it works with any component that exposes those two props — every wrapper in this package (`Button`, `Card`, `Chip`, `FAB`, `IconButton`, `TouchableRipple`, the native `Pressable`/`TouchableOpacity`/`TouchableHighlight`), a plain `react-native-paper` or bare-RN component, or your own via `withFeedback`. It's demonstrated below with `FAB`, but nothing about it is FAB-specific — including in this package's own plain-RN fallback (no `paper` injected): every wrapper that accepts `onLongPress` also correctly forwards `onPressOut`/`delayLongPress` in fallback mode, not just when Paper is real.
+Component-agnostic: `useHoldToRepeat` just returns plain `onLongPress`/`onPressOut` callbacks, so it works with any component that exposes those two props - every wrapper in this package (`Button`, `Card`, `Chip`, `FAB`, `IconButton`, `TouchableRipple`, the native `Pressable`/`TouchableOpacity`/`TouchableHighlight`), a plain `react-native-paper` or bare-RN component, or your own via `withFeedback`. It's demonstrated below with `FAB`, but nothing about it is FAB-specific - including in this package's own plain-RN fallback (no `paper` injected): every wrapper that accepts `onLongPress` also correctly forwards `onPressOut`/`delayLongPress` in fallback mode, not just when Paper is real.
 
 ```tsx
 import { FAB, useHoldToRepeat } from '@rific/feedback-press'
@@ -260,8 +260,8 @@ export function StepperFAB({ onStep }: { onStep: () => void }) {
 
 ```ts
 const {
-  onLongPress,  // () => void — wire to the component's own onLongPress
-  onPressOut,   // () => void — wire to the component's own onPressOut
+  onLongPress,  // () => void - wire to the component's own onLongPress
+  onPressOut,   // () => void - wire to the component's own onPressOut
 } = useHoldToRepeat(action, repeatMs, options?)
 ```
 
@@ -272,7 +272,7 @@ const {
 | `soundDisabled` | `boolean` | `false` | Suppresses just the sound, keeping the haptic. |
 | `sound` | `SoundConfig` | - | Overrides the provider's ambient `sound` config for just this hold-to-repeat loop, the same per-instance override every wrapper component's own `sound` prop already gives. |
 
-`useHoldToRepeatByKey` is the keyed sibling, for a set of independently-holdable targets that all funnel through one action (e.g. per-item "randomize" buttons rendered from a list) instead of a single fixed one — same shape, but `action` takes a `key`, and `onLongPress`/`onPressOut` are curried on it. Two different keys held at once keep entirely separate timers; releasing one never stops the other's.
+`useHoldToRepeatByKey` is the keyed sibling, for a set of independently-holdable targets that all funnel through one action (e.g. per-item "randomize" buttons rendered from a list) instead of a single fixed one - same shape, but `action` takes a `key`, and `onLongPress`/`onPressOut` are curried on it. Two different keys held at once keep entirely separate timers; releasing one never stops the other's.
 
 ```tsx
 const hold = useHoldToRepeatByKey(randomizeGroup, 1000)
@@ -280,9 +280,9 @@ const hold = useHoldToRepeatByKey(randomizeGroup, 1000)
 <FAB onLongPress={hold.onLongPress('mirror')} onPressOut={hold.onPressOut('mirror')} />
 ```
 
-Both hooks call `action` (and pulse feedback) synchronously on the initial `onLongPress` — pair with a component that already fires its own `notification` there (like this package's own `FAB`) and the very first press gets both; that's intentional, the same "confirmed, now repeating" double-pulse a real long-press-then-hold naturally reads as.
+Both hooks call `action` (and pulse feedback) synchronously on the initial `onLongPress` - pair with a component that already fires its own `notification` there (like this package's own `FAB`) and the very first press gets both; that's intentional, the same "confirmed, now repeating" double-pulse a real long-press-then-hold naturally reads as.
 
-`onLongPress` is safe to call again before a matching `onPressOut` (e.g. a gesture handler that double-fires it) — it restarts the repeat cleanly instead of leaking the previous interval.
+`onLongPress` is safe to call again before a matching `onPressOut` (e.g. a gesture handler that double-fires it) - it restarts the repeat cleanly instead of leaking the previous interval.
 
 ## Sound feedback
 
@@ -452,7 +452,7 @@ Takes plain values and callbacks rather than a `dispatch` function or any Redux-
 
 ### Per-instance overrides
 
-Every wrapper component accepts four optional, wiring-time-only props for tweaking just that one instance — none of them ever reach the underlying Paper/native component:
+Every wrapper component accepts four optional, wiring-time-only props for tweaking just that one instance - none of them ever reach the underlying Paper/native component:
 
 | Prop | Effect |
 |---|---|

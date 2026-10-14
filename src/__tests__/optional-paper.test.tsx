@@ -81,7 +81,7 @@ describe('Card', () => {
     expect(MockPressable).toHaveBeenCalled()
   })
 
-  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB - see either's own comment.
   it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
     const onPressOut = jest.fn()
     render(
@@ -142,7 +142,7 @@ describe('IconButton', () => {
     expect(container.textContent).toBe('S')
   })
 
-  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB - see either's own comment.
   it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
     const onPressOut = jest.fn()
     render(<IconButton icon='star' onPress={jest.fn()} onLongPress={jest.fn()} onPressOut={onPressOut} delayLongPress={400} />, { wrapper: withoutPaper })
@@ -163,7 +163,7 @@ describe('Chip', () => {
     expect(container.textContent).toBe('Filter')
   })
 
-  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB - see either's own comment.
   it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
     const onPressOut = jest.fn()
     render(
@@ -189,7 +189,7 @@ describe('TouchableRipple', () => {
     expect(container.textContent).toBe('Ripple')
   })
 
-  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB — see either's own comment.
+  // Same onPressOut/delayLongPress-forwarding gap as Button/FAB - see either's own comment.
   it('forwards onPressOut and delayLongPress to the fallback Pressable, not just onPress/onLongPress', () => {
     const onPressOut = jest.fn()
     render(

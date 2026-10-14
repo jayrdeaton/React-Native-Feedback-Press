@@ -16,7 +16,7 @@ export const FAB = (props: FABProps) => {
 
   // No `paper` injected: plain-RN fallback, not a Material Design reproduction. Consumers
   // who want the real look pass `paper` to <FeedbackPressProvider>. onPressOut/delayLongPress
-  // forwarded alongside onLongPress/onPress — useHoldToRepeat's onPressOut is what actually stops
+  // forwarded alongside onLongPress/onPress - useHoldToRepeat's onPressOut is what actually stops
   // its repeat interval on release, so dropping it here would leave that interval running forever
   // in fallback mode even after the real <paper.FAB> branch (which spreads {...wired} and so
   // forwards it fine) would have stopped it.
