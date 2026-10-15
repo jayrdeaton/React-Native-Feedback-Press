@@ -1,9 +1,10 @@
-import { Pressable } from 'react-native'
+import { type Insets, Pressable } from 'react-native'
 
 import { type AppbarActionProps, useFeedbackPressPaper } from '../../PaperContext'
 import { useFeedbackHandlers } from '../../useFeedbackHandlers'
 import { fallbackStyles } from './fallbackStyles'
 import { renderFallbackIcon } from './renderFallbackIcon'
+import { renderWithHitSlop } from './renderWithHitSlop'
 
 export type { AppbarActionProps }
 
@@ -15,11 +16,12 @@ export const AppbarAction = (props: AppbarActionProps) => {
   const paper = useFeedbackPressPaper()
   const { icon, ...wired } = useFeedbackHandlers(props, { onPress: 'selection' })
 
-  if (paper) return <paper.Appbar.Action {...wired} icon={icon} />
+  // Paper's Appbar.Action is its IconButton underneath, so a hitSlop needs the same wrapper.
+  if (paper) return renderWithHitSlop(wired, (actionProps) => <paper.Appbar.Action {...actionProps} icon={icon} />)
 
   // No `paper` injected: plain-RN fallback, not a Material Design reproduction.
   return (
-    <Pressable onPress={wired.onPress} style={fallbackStyles.iconButton}>
+    <Pressable hitSlop={wired.hitSlop as number | Insets | undefined} onPress={wired.onPress} style={fallbackStyles.iconButton}>
       {renderFallbackIcon(icon)}
     </Pressable>
   )

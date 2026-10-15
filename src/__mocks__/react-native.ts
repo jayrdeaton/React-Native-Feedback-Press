@@ -2,9 +2,17 @@ import React from 'react'
 
 const stub = ({ children }: { children?: React.ReactNode }) => children ?? null
 
+// flatten merges nested style arrays left to right and skips falsy entries, like the real one.
+// renderWithHitSlop splits a flattened style by key, so a passthrough would hand it an array.
+const flatten = (style: unknown): Record<string, unknown> | undefined => {
+  if (!style) return undefined
+  if (Array.isArray(style)) return style.reduce<Record<string, unknown>>((merged, entry) => ({ ...merged, ...flatten(entry) }), {})
+  return style as Record<string, unknown>
+}
+
 const StyleSheet = {
   create: <T extends object>(styles: T): T => styles,
-  flatten: (style: unknown) => style
+  flatten
 }
 
 const Vibration = {

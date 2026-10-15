@@ -14,7 +14,7 @@ Part of the `@rific` package ecosystem. Published at https://www.npmjs.com/packa
 npm run lint         # ESLint check
 npm run fix           # Auto-fix lint issues
 npm run typecheck    # TypeScript type check (tsc --noEmit)
-npm test             # Jest (172 tests)
+npm test             # Jest (188 tests)
 npm run test:watch   # Jest in watch mode
 npm run build        # tsup, outputs CJS + ESM + types to dist/ (two entries: index.ts, audio/index.ts)
 npm run build:watch  # tsup in watch mode
@@ -75,6 +75,7 @@ src/
       TouchableRipple.tsx          - Paper TouchableRipple wrapper; plain-RN fallback Pressable with android_ripple
       fallbackStyles.ts            - fallbackColors + StyleSheet shared by every plain-RN fallback above (functional, not a Material Design reproduction)
       renderFallbackIcon.tsx        - renders Paper's `icon` prop shape (a name string or render function) without react-native-paper or an icon font installed
+      renderWithHitSlop.tsx         - wraps Paper's IconButton (and Appbar.Action/BackAction) in an invisible Pressable that owns `hitSlop`, since Paper clips its own; see "hitSlop on icon buttons" below
   redux/
     hapticSlice.ts              - thin binding over @rific/core's createSettingsSlice('haptic', {initialState: defaultHapticSettings}) factory - no @reduxjs/toolkit dependency, works with RTK, vanilla Redux, or none. Corrected 2026-09-18: this used to be a hand-rolled reducer/actions pair; it was migrated onto the shared factory in an earlier pass but this doc was never updated to match - see @rific/core's own CLAUDE.md for the factory itself
     soundSlice.ts               - same thin binding, createSettingsSlice('sound', {initialState: defaultSoundSettings})
@@ -118,8 +119,42 @@ src/
 
 - Framework: Jest + ts-jest (via `@infinitetoken/jest-config/react-native`), jsdom environment
 - Mocks in `src/__mocks__/` for `react-native`, `react-native-paper`, `expo-haptics`, `expo-audio`
-- 172 tests across 15 suites in `src/__tests__/`
+- 188 tests across 16 suites in `src/__tests__/`
 - Coverage clears the fleet's 70%×4 default with real margin - measured 94.97/83.15/92.3/96.63% (statements/branches/functions/lines) as of 2026-08-30; no local `coverageThreshold` override
+
+## `hitSlop` on icon buttons (2026-10-15)
+
+**Paper's own `hitSlop` on an IconButton is a no-op on device.** Paper renders the TouchableRipple inside a
+Surface with `overflow: 'hidden'` (its `styles.container`, 40x40 at size 24, plus a 6pt margin), and passes
+`hitSlop` to the TouchableRipple. React Native's native hit testing won't look past a parent that clips:
+iOS Fabric's `RCTViewComponentView betterHitTest` returns nil outside a view's bounds when it clips or has
+no overflow inset, and Android's `TouchTargetHelper` returns null outside an `overflow: hidden` view. A
+child's `hitSlop` only counts toward its parent's overflow inset while the parent's overflow is visible
+(`YogaLayoutableShadowNode::layout`). So the slop stops at 40pt, Paper's own default (6pt, or 10pt where
+ripples are supported) included. Appbar.Action and Appbar.BackAction render an IconButton, so they share
+it. Paper's Button, Chip, FAB and Checkbox don't clip, so their `hitSlop` already works. Found while
+adding a 48pt target to `@tastic/hud`'s CornerActionButtons: Hangman's drawer headers had been passing a
+4pt slop to IconButton with no effect.
+
+**The fix (`renderWithHitSlop.tsx`, used by IconButton, AppbarAction and AppbarBackAction) wraps the Paper
+button in a plain RN Pressable that owns the slop.** It's only applied when `hitSlop` is set; otherwise the
+Paper button renders exactly as before. The wrapper takes the caller's placement style keys (position,
+offsets, `margin*`, `inset*`, flex, `alignSelf`, `zIndex`, `display`, `transform`) and Paper's 6pt margin,
+and the Paper button gets the rest plus `margin: 0`, so the wrapper's box is the button's box and layout
+doesn't move. It's `accessible={false}`, `focusable={false}`, `importantForAccessibility='no'`, and disabled
+when the button is disabled or has no touch handler (mirroring Paper's TouchableRipple). Both it and Paper
+get the same wired handlers; one gesture only ever reaches one of them, since the deepest responder wins
+inside the button. The plain-RN fallbacks for those three forward `hitSlop` directly (nothing clips there).
+
+**Jay wanted a bigger target without showing it (2026-10-15), which is why it's a wrapper and not a style
+override.** The obvious alternative, `style={{ overflow: 'visible' }}` on Paper's Surface plus a radius on
+the touchable, makes a real `hitSlop` work and keeps the iOS and web press feedback clipped to the circle
+(both draw it as a child of the touchable), but not Android's: Paper's borderless ripple is the touchable's
+own foreground, `ReactViewGroup` only clips children (`dispatchDraw`), and `clipChildren` is false, so the
+ripple would spread to about 57pt (half the box's diagonal). Bounding it means passing Paper a `background`
+ripple config with a radius, which means re-deriving Paper's themed ripple color here. Growing the Surface
+instead grows a `mode='contained'` button's fill. The wrapper's one cost: a press in the slop band shows no
+ripple (haptics, sound and the callback still fire).
 
 ## Code Style
 

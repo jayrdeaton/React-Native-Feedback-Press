@@ -130,6 +130,21 @@ All components are drop-in replacements with identical prop types to their origi
 
 `Card` re-exports its subcomponents: `Card.Content`, `Card.Title`, `Card.Actions`, `Card.Cover`.
 
+### `hitSlop` on icon buttons
+
+On plain `react-native-paper`, `hitSlop` on an `IconButton` does nothing: Paper puts the button's touchable inside a Surface with `overflow: 'hidden'`, and React Native's hit testing never reaches past a clipping parent, so the touch area stays at the button's own box (40pt at the default size). `Appbar.Action` and `Appbar.BackAction` render an `IconButton`, so they have the same problem.
+
+This package's `IconButton`, `AppbarAction` and `AppbarBackAction` make it work. Pass `hitSlop` (a number or `Insets`) and the touch area grows by that much past the button's edge, while the button looks the same at rest and while pressed:
+
+```tsx
+// a 48pt target around a 40pt button
+<IconButton icon='cog' hitSlop={4} onPress={openSettings} />
+```
+
+With `hitSlop` set, the Paper button is wrapped in an invisible `Pressable` that owns the slop. The wrapper takes the button's placement styles (position, offsets, margins, flex, `alignSelf`, `zIndex`, `display`, `transform`) and Paper's own 6pt margin, so it sits exactly where the button did and layout doesn't change. A press inside the button still goes to Paper (with its ripple). A press in the slop band goes to the wrapper, which runs the same haptics, sound and callbacks but shows no ripple. The wrapper is hidden from screen readers and keyboard focus, and it's disabled whenever the button is disabled or has no handler. Without `hitSlop`, nothing is wrapped. Placement styles must be plain values, since the wrapper isn't an Animated component.
+
+The other Paper wrappers (`Button`, `Chip`, `FAB`, `TouchableRipple`, `Checkbox`) don't clip, so Paper's own `hitSlop` already works on them. As with any `hitSlop`, the slop also stops at any ancestor with `overflow: 'hidden'`.
+
 ### Native wrappers
 
 | Component | Fires on |
@@ -505,4 +520,4 @@ export function App() {
 
 - **iOS**: uses `expo-haptics` (`selectionAsync`, `notificationAsync`, `impactAsync`)
 - **Android**: falls back to `Vibration.vibrate()` with duration mapping
-- **Web**: haptics are no-ops (expo-haptics returns silently)
+- **Web**: haptics are no-ops (expo-haptics returns silently). `hitSlop` is a no-op too: react-native-web ignores it on every component, so an icon button's target on web is its own box.
