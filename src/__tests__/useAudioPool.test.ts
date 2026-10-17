@@ -18,10 +18,17 @@ afterEach(() => {
 
 const flush = () => act(() => jest.runAllTimersAsync())
 
-// createAudioPlayer's own mock factory returns a fresh { play, seekTo, remove } object per call,
+// createAudioPlayer's own mock factory returns a fresh { play, seekTo, remove, addListener } object per call,
 // so the Nth entry here is the exact player instance the pool's Nth createAudioPlayer(source)
 // call created.
 const playersFor = () => mockedCreateAudioPlayer.mock.results.map((r) => r.value)
+
+/** The player's clip reaches its end: expo-audio's playbackStatusUpdate with didJustFinish. */
+function finish(player: { addListener: jest.Mock }) {
+  const [event, listener] = player.addListener.mock.calls[0]
+  expect(event).toBe('playbackStatusUpdate')
+  listener({ didJustFinish: true })
+}
 
 describe('useAudioPool', () => {
   it('allocates exactly poolSize players, not a fixed maximum', async () => {
@@ -76,7 +83,9 @@ describe('useAudioPool', () => {
     expect(players[3].play).toHaveBeenCalledTimes(1)
   })
 
-  it('seeks to 0 before playing, so a retriggered clip restarts instead of resuming', async () => {
+  // A seek resolves at uneven times (AVPlayer's completion handler, then the bridge back to JS), so seeking on every trigger
+  // turned evenly spaced triggers - a card deal's beat - into unevenly spaced sounds. A player rewinds after its clip instead.
+  it('a rewound player just plays: the trigger does not wait on a seek', async () => {
     const { result } = renderHook(() => useAudioPool('sound.wav'))
     await flush()
     const players = playersFor()
@@ -84,8 +93,64 @@ describe('useAudioPool', () => {
     act(() => result.current())
     await flush()
 
-    expect(players[0].seekTo).toHaveBeenCalledWith(0)
     expect(players[0].play).toHaveBeenCalledTimes(1)
+    expect(players[0].seekTo).not.toHaveBeenCalled()
+  })
+
+  it('rewinds a player as soon as its clip finishes, so its next turn only plays', async () => {
+    const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+    await flush()
+    const [player] = playersFor()
+
+    act(() => result.current())
+    await flush()
+    await act(async () => finish(player))
+    expect(player.seekTo).toHaveBeenCalledTimes(1)
+    expect(player.seekTo).toHaveBeenCalledWith(0)
+
+    act(() => result.current())
+    await flush()
+    expect(player.play).toHaveBeenCalledTimes(2)
+    expect(player.seekTo).toHaveBeenCalledTimes(1) // the trigger itself did not seek
+  })
+
+  it('seeks to 0 before playing a player that has not rewound yet, so a retriggered clip restarts instead of resuming', async () => {
+    const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+    await flush()
+    const [player] = playersFor()
+
+    act(() => {
+      result.current()
+      result.current() // still playing the first: no finish yet
+    })
+    await flush()
+
+    expect(player.seekTo).toHaveBeenCalledTimes(1)
+    expect(player.seekTo).toHaveBeenCalledWith(0)
+    expect(player.play).toHaveBeenCalledTimes(2)
+    expect(player.seekTo.mock.invocationCallOrder[0]).toBeLessThan(player.play.mock.invocationCallOrder[1])
+  })
+
+  it('a rewind that resolves after a newer trigger does not mark the player ready', async () => {
+    const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+    await flush()
+    const [player] = playersFor()
+    act(() => result.current())
+    await flush()
+
+    let resolveRewind = () => {}
+    player.seekTo.mockImplementationOnce(() => new Promise<void>((resolve) => (resolveRewind = resolve)))
+    await act(async () => finish(player)) // the rewind's seek is still in flight...
+    act(() => result.current()) // ...when the player is triggered again: it seeks and plays
+    await flush()
+    await act(async () => resolveRewind()) // the old rewind lands while that clip plays
+    expect(player.seekTo).toHaveBeenCalledTimes(2)
+
+    act(() => result.current())
+    await flush()
+    // Not ready: the player is mid-clip, so this trigger has to seek too, or play() would be a no-op on a playing clip.
+    expect(player.seekTo).toHaveBeenCalledTimes(3)
+    expect(player.play).toHaveBeenCalledTimes(3)
   })
 
   it('overlapping presses land on different players instead of racing the same one', async () => {
@@ -112,7 +177,10 @@ describe('useAudioPool', () => {
 
     unmount()
 
-    players.forEach((player) => expect(player.remove).toHaveBeenCalledTimes(1))
+    players.forEach((player) => {
+      expect(player.remove).toHaveBeenCalledTimes(1)
+      expect(player.addListener.mock.results[0].value.remove).toHaveBeenCalledTimes(1)
+    })
   })
 
   it('cancels pending pool creation if unmounted before the deferred timer fires', () => {

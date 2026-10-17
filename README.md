@@ -2,6 +2,8 @@
 
 Haptic and sound feedback wrappers for React Native Paper and built-in pressable components. Drop-in replacements that fire `selection` haptics (and, optionally, an app-supplied sound) on touch-down and `notification` feedback on long press, with a single provider to toggle them globally.
 
+**[Live demo](https://rific.jaydeaton.com/demos/feedback-press)**: Sound plays on the web, but haptics and hit slop do nothing there, so the full behavior needs iOS or Android.
+
 ## Install
 
 ```sh
@@ -350,6 +352,8 @@ export function App() {
 ```
 
 **Why a pool, not a single player:** a single `AudioPlayer` retriggered rapidly races itself - a second press's `seekTo(0)` (needed so a retriggered clip restarts from the top instead of resuming mid-clip) can reset playback position out from under the first press's still-in-flight `play()` call, silently aborting it. The sound just never plays for that press, not merely overlaps or cuts short. `useAudioPool` builds the pool with `createAudioPlayer` (a plain factory, not the `useAudioPlayer` hook) and hands back a single play function; overlapping presses land on different players internally and never race each other.
+
+**Steady timing:** each player rewinds to the start as soon as its clip finishes, so a trigger normally only calls `play()` and the sound starts a steady delay after it. Seeking on every trigger made evenly spaced triggers (a card game's deal, say) come out unevenly spaced, because a seek resolves at uneven times. A player triggered again before its rewind has landed (a pool too small for how fast it's triggered) still seeks first.
 
 `poolSize` (default `4`, clamped to 16) is a real allocation, not a fixed ceiling - `poolSize: 1` creates exactly one native player, `poolSize: 6` creates six. Pick it per clip based on how often that specific sound actually gets retriggered in quick succession: a one-shot sound (a win/loss jingle) is fine at the default or even `1`, while something a user might rapidly double/triple-tap wants more headroom. Call `useAudioPool` once per clip, same as `useAudioPlayer`.
 

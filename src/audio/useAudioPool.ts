@@ -65,13 +65,41 @@ export function __resetAudioSessionConfiguredForTests() {
   audioSessionAutoConfigureDisabled = false
 }
 
-// Deferred a tick via setTimeout, seekTo(0) before play() - expo-audio's play() blocks the
-// native UI thread synchronously on Android, so firing it inline from a press handler adds that
-// round-trip latency to the very state update the press triggers. seekTo(0) restarts a clip
-// that's already playing or finished instead of no-oping.
-function triggerPlayback(player: AudioPlayer) {
+/** One pooled player and whether it is rewound and ready to play from the start. */
+type PooledPlayer = {
+  player: AudioPlayer
+  /** True while the player sits at 0 with nothing playing, so a trigger only has to call play(). */
+  atStart: boolean
+  /** Bumped by every trigger, so a rewind that finishes after a newer trigger can't mark a playing player as ready. */
+  plays: number
+  finished: { remove(): void }
+}
+
+// Rewinds a player whose clip just finished, ready for its next turn. The rewind used to be part of
+// every trigger (seekTo(0), then play() once the seek resolved), and a seek resolves at uneven times
+// (AVPlayer's completion handler, then the bridge back to JS), so a steady run of triggers - a card
+// deal's beat - came out as uneven sounds. Done here, after the clip, it is long finished by the time
+// the round robin comes back to this player.
+function rewind(entry: PooledPlayer) {
+  const plays = entry.plays
+  void entry.player.seekTo(0).then(() => {
+    if (entry.plays === plays) entry.atStart = true
+  })
+}
+
+// Deferred a tick via setTimeout - expo-audio's play() blocks the native UI thread synchronously on
+// Android, so firing it inline from a press handler adds that round-trip latency to the very state
+// update the press triggers. A rewound player (atStart) just plays: no seek, so the sound starts a
+// steady delay after its trigger. One that isn't (still playing, or its rewind hasn't resolved - a
+// pool too small for how fast it's triggered) seeks to 0 first, which restarts a clip that's already
+// playing or finished instead of no-oping.
+function triggerPlayback(entry: PooledPlayer) {
+  entry.plays += 1
+  const ready = entry.atStart
+  entry.atStart = false
   setTimeout(() => {
-    void player.seekTo(0).then(() => player.play())
+    if (ready) entry.player.play()
+    else void entry.player.seekTo(0).then(() => entry.player.play())
   }, 0)
 }
 
@@ -81,7 +109,9 @@ function triggerPlayback(player: AudioPlayer) {
  * aborting it - the sound never plays for that press at all, rather than merely overlapping or
  * cutting short. `useAudioPool` sidesteps this by round-robining across a small pool of
  * independent players instead of sharing one, so overlapping presses land on different players
- * and never race each other's `seekTo`/`play`.
+ * and never race each other's `seekTo`/`play`. Each player rewinds as soon as its clip finishes,
+ * so a trigger normally only calls `play()` and the sound starts a steady delay after it: a run of
+ * evenly spaced triggers plays evenly spaced.
  *
  * Built on `createAudioPlayer` - a plain factory, not `useAudioPlayer` the hook - specifically so
  * exactly `poolSize` players get created, not a fixed maximum regardless of what's requested. A
@@ -97,7 +127,7 @@ function triggerPlayback(player: AudioPlayer) {
  */
 export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): () => void {
   const poolSize = clampPoolSize(options?.poolSize ?? DEFAULT_POOL_SIZE)
-  const playersRef = useRef<AudioPlayer[]>([])
+  const playersRef = useRef<PooledPlayer[]>([])
   const nextIndex = useRef(0)
 
   // Pool creation is pushed one tick out via setTimeout rather than run inline in the effect. A
@@ -110,7 +140,7 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
   // simplicity wins over preserving in-flight players across a change that shouldn't happen after
   // mount anyway.
   useEffect(() => {
-    let players: AudioPlayer[] = []
+    let players: PooledPlayer[] = []
     let cancelled = false
     const timer = setTimeout(async () => {
       // Recorded synchronously, before any `await`, so that an opted-out pool's timer always
@@ -131,14 +161,25 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
       // session's own activation cost can eat into or outlast the clip itself. The session is a
       // per-process singleton anyway, so there's no isolation benefit to letting each pooled
       // player deactivate it independently - keep it warm for as long as the pool is mounted.
-      players = Array.from({ length: poolSize }, () => createAudioPlayer(source, { keepAudioSessionActive: true }))
+      players = Array.from({ length: poolSize }, () => {
+        const player = createAudioPlayer(source, { keepAudioSessionActive: true })
+        // A new player starts at 0, so its first trigger can play straight away.
+        const entry: PooledPlayer = { player, atStart: true, plays: 0, finished: { remove() {} } }
+        entry.finished = player.addListener('playbackStatusUpdate', (status) => {
+          if (status.didJustFinish) rewind(entry)
+        })
+        return entry
+      })
       playersRef.current = players
       nextIndex.current = 0
     }, 0)
     return () => {
       cancelled = true
       clearTimeout(timer)
-      players.forEach((player) => player.remove())
+      players.forEach((entry) => {
+        entry.finished.remove()
+        entry.player.remove()
+      })
       playersRef.current = []
     }
   }, [source, poolSize, options?.configureAudioSession])
@@ -146,8 +187,8 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
   return useCallback(() => {
     const players = playersRef.current
     if (players.length === 0) return
-    const player = players[nextIndex.current]
+    const entry = players[nextIndex.current]
     nextIndex.current = (nextIndex.current + 1) % players.length
-    triggerPlayback(player)
+    triggerPlayback(entry)
   }, [])
 }
