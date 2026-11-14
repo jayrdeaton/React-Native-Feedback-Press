@@ -1,5 +1,8 @@
-import { type AudioPlayer, type AudioSource, createAudioPlayer, setAudioModeAsync } from 'expo-audio'
+import { type AudioSource, createAudioPlayer } from 'expo-audio'
 import { useCallback, useEffect, useRef } from 'react'
+
+import { applyLevel, type LevelledPlayer, type PlayAudio, prepareLevelledPlayer, readPlayOptions } from './audioLevel'
+import { prepareAudioSession } from './audioSession'
 
 export type AudioPoolOptions = {
   /**
@@ -40,34 +43,8 @@ function clampPoolSize(size: number): number {
   return Math.min(MAX_POOL_SIZE, Math.max(1, Math.round(size)))
 }
 
-let audioSessionConfigured = false
-// Set (and left set) as soon as any pool mounts with `configureAudioSession: false`. Since
-// `audioSessionConfigured` is a process-wide, first-caller-wins singleton, a per-instance opt-out
-// can only be honored process-wide too - otherwise a later pool that omits the option would still
-// silently configure the session out from under the opted-out one. This can't protect a session
-// that's already been configured by an earlier default pool; it only suppresses configuration
-// that hasn't happened yet.
-let audioSessionAutoConfigureDisabled = false
-
-async function ensureAudioSessionConfigured() {
-  if (audioSessionConfigured || audioSessionAutoConfigureDisabled) return
-  audioSessionConfigured = true
-  try {
-    await setAudioModeAsync({ interruptionMode: 'mixWithOthers', playsInSilentMode: false })
-  } catch {
-    audioSessionConfigured = false
-  }
-}
-
-// Test-only escape hatch to reset the module-level singletons between tests.
-export function __resetAudioSessionConfiguredForTests() {
-  audioSessionConfigured = false
-  audioSessionAutoConfigureDisabled = false
-}
-
-/** One pooled player and whether it is rewound and ready to play from the start. */
-type PooledPlayer = {
-  player: AudioPlayer
+/** One pooled player, the level last written to it, and whether it is rewound and ready to play from the start. */
+type PooledPlayer = LevelledPlayer & {
   /** True while the player sits at 0 with nothing playing, so a trigger only has to call play(). */
   atStart: boolean
   /** Bumped by every trigger, so a rewind that finishes after a newer trigger can't mark a playing player as ready. */
@@ -92,12 +69,14 @@ function rewind(entry: PooledPlayer) {
 // update the press triggers. A rewound player (atStart) just plays: no seek, so the sound starts a
 // steady delay after its trigger. One that isn't (still playing, or its rewind hasn't resolved - a
 // pool too small for how fast it's triggered) seeks to 0 first, which restarts a clip that's already
-// playing or finished instead of no-oping.
-function triggerPlayback(entry: PooledPlayer) {
+// playing or finished instead of no-oping. The play's volume and rate are written first, in the same
+// deferred tick, and only when they differ from the player's last play.
+function triggerPlayback(entry: PooledPlayer, volume: number, rate: number) {
   entry.plays += 1
   const ready = entry.atStart
   entry.atStart = false
   setTimeout(() => {
+    applyLevel(entry, volume, rate)
     if (ready) entry.player.play()
     else void entry.player.seekTo(0).then(() => entry.player.play())
   }, 0)
@@ -119,13 +98,15 @@ function triggerPlayback(entry: PooledPlayer) {
  * called in an ordinary loop, so a rarely-retriggered sound can ask for `poolSize: 1` and
  * genuinely allocate one native player rather than paying for headroom it never uses.
  *
- * Returns a single `() => void` play function - call `useAudioPool` once per distinct clip, the
- * same way you'd call `useAudioPlayer` once per clip.
+ * Returns a single play function - call `useAudioPool` once per distinct clip, the same way you'd
+ * call `useAudioPlayer` once per clip. Each play can set its own volume and rate (`PlayOptions`):
+ * an impact louder the harder it lands, or a clip pitched a little differently each time so a
+ * repeated sound doesn't grate.
  *
  * Also configures the shared audio session by default - see `configureAudioSession` on
  * `AudioPoolOptions`.
  */
-export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): () => void {
+export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): PlayAudio {
   const poolSize = clampPoolSize(options?.poolSize ?? DEFAULT_POOL_SIZE)
   const playersRef = useRef<PooledPlayer[]>([])
   const nextIndex = useRef(0)
@@ -143,16 +124,7 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
     let players: PooledPlayer[] = []
     let cancelled = false
     const timer = setTimeout(async () => {
-      // Recorded synchronously, before any `await`, so that an opted-out pool's timer always
-      // marks the disable flag before a same-tick default pool's timer (which fires afterward,
-      // since same-delay `setTimeout` callbacks run in registration order) reaches its own
-      // `ensureAudioSessionConfigured` call.
-      if (options?.configureAudioSession === false) {
-        audioSessionAutoConfigureDisabled = true
-      }
-      if (options?.configureAudioSession !== false) {
-        await ensureAudioSessionConfigured()
-      }
+      await prepareAudioSession(options?.configureAudioSession)
       if (cancelled) return
       // keepAudioSessionActive: true - without it, expo-audio tears the shared AVAudioSession
       // down (with a ~100ms delay) once every pooled player finishes and rebuilds it fresh on
@@ -164,7 +136,7 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
       players = Array.from({ length: poolSize }, () => {
         const player = createAudioPlayer(source, { keepAudioSessionActive: true })
         // A new player starts at 0, so its first trigger can play straight away.
-        const entry: PooledPlayer = { player, atStart: true, plays: 0, finished: { remove() {} } }
+        const entry: PooledPlayer = { ...prepareLevelledPlayer(player), atStart: true, plays: 0, finished: { remove() {} } }
         entry.finished = player.addListener('playbackStatusUpdate', (status) => {
           if (status.didJustFinish) rewind(entry)
         })
@@ -184,11 +156,12 @@ export function useAudioPool(source: AudioSource, options?: AudioPoolOptions): (
     }
   }, [source, poolSize, options?.configureAudioSession])
 
-  return useCallback(() => {
+  return useCallback<PlayAudio>((play) => {
     const players = playersRef.current
     if (players.length === 0) return
     const entry = players[nextIndex.current]
     nextIndex.current = (nextIndex.current + 1) % players.length
-    triggerPlayback(entry)
+    const { volume, rate } = readPlayOptions(play)
+    triggerPlayback(entry, volume, rate)
   }, [])
 }

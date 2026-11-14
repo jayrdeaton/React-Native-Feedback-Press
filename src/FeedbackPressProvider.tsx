@@ -1,6 +1,7 @@
 import { type ReactNode, useContext } from 'react'
 
 import { type HapticSettings, HapticSettingsContext, HapticSettingsProvider } from './HapticSettingsContext'
+import { type MusicSettings, MusicSettingsContext, MusicSettingsProvider } from './MusicSettingsContext'
 import { PaperContext, type PaperModuleShape } from './PaperContext'
 import { type SoundConfig, SoundContext } from './SoundContext'
 import { type SoundSettings, SoundSettingsContext, SoundSettingsProvider } from './SoundSettingsContext'
@@ -19,9 +20,13 @@ export type FeedbackPressProviderProps = {
   soundInitialValue?: Partial<SoundSettings>
   /** Called with the full sound settings object whenever they change via `useSoundSettings().set`, analogous to `onChange` for haptics. */
   onSoundChange?: (settings: SoundSettings) => void
+  /** Initial value for the music-enabled setting, which is separate from sound: `useMusic` loops play only while it's on. */
+  musicInitialValue?: Partial<MusicSettings>
+  /** Called with the full music settings object whenever they change via `useMusicSettings().set`, analogous to `onSoundChange`. */
+  onMusicChange?: (settings: MusicSettings) => void
 }
 
-export function FeedbackPressProvider({ children, initialValue, onChange, paper, sound, soundInitialValue, onSoundChange }: FeedbackPressProviderProps) {
+export function FeedbackPressProvider({ children, initialValue, onChange, paper, sound, soundInitialValue, onSoundChange, musicInitialValue, onMusicChange }: FeedbackPressProviderProps) {
   // react-native-paper's own Portal (what every Dialog/Menu/Snackbar renders through) doesn't
   // render its content in place: it hands children to the nearest Portal.Host's manager via an
   // imperative mount() call, which re-renders them as that host's own child - bypassing whatever
@@ -43,9 +48,11 @@ export function FeedbackPressProvider({ children, initialValue, onChange, paper,
   return (
     <HapticSettingsProvider initialValue={initialValue} onChange={onChange}>
       <SoundSettingsProvider initialValue={soundInitialValue} onChange={onSoundChange}>
-        <PaperContext.Provider value={paper ?? null}>
-          <SoundContext.Provider value={sound ?? EMPTY_SOUND}>{content}</SoundContext.Provider>
-        </PaperContext.Provider>
+        <MusicSettingsProvider initialValue={musicInitialValue} onChange={onMusicChange}>
+          <PaperContext.Provider value={paper ?? null}>
+            <SoundContext.Provider value={sound ?? EMPTY_SOUND}>{content}</SoundContext.Provider>
+          </PaperContext.Provider>
+        </MusicSettingsProvider>
       </SoundSettingsProvider>
     </HapticSettingsProvider>
   )
@@ -58,5 +65,10 @@ export const useFeedbackPressContext = () => {
 
 export const useFeedbackPressSoundContext = () => {
   const { settings } = useContext(SoundSettingsContext)
+  return { enabled: settings.enabled }
+}
+
+export const useFeedbackPressMusicContext = () => {
+  const { settings } = useContext(MusicSettingsContext)
   return { enabled: settings.enabled }
 }

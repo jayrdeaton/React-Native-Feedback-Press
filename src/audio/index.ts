@@ -1,2 +1,6 @@
+export { MAX_PLAYBACK_RATE, MIN_PLAYBACK_RATE, type PlayAudio, type PlayOptions } from './audioLevel'
 export { type AudioPoolOptions, useAudioPool } from './useAudioPool'
 export { useGatedAudioPool } from './useGatedAudioPool'
+export { useGatedLoopingAudio } from './useGatedLoopingAudio'
+export { LEVEL_MIN_INTERVAL_MS, type LoopingAudio, type LoopingAudioOptions, PAUSE_AFTER_SILENCE_MS, useLoopingAudio } from './useLoopingAudio'
+export { MUSIC_FADE_MS, type MusicOptions, useMusic } from './useMusic'

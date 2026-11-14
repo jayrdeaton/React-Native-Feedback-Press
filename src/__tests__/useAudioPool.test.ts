@@ -1,7 +1,8 @@
 import { act, renderHook } from '@testing-library/react'
 import * as audio from 'expo-audio'
 
-import { __resetAudioSessionConfiguredForTests, useAudioPool } from '../audio/useAudioPool'
+import { __resetAudioSessionConfiguredForTests } from '../audio/audioSession'
+import { useAudioPool } from '../audio/useAudioPool'
 
 const mockedCreateAudioPlayer = audio.createAudioPlayer as jest.Mock
 const mockedSetAudioModeAsync = audio.setAudioModeAsync as jest.Mock
@@ -203,6 +204,90 @@ describe('useAudioPool', () => {
 
     firstPoolPlayers.forEach((player) => expect(player.remove).toHaveBeenCalledTimes(1))
     expect(mockedCreateAudioPlayer).toHaveBeenCalledTimes(2 + 5)
+  })
+
+  describe('per-play volume and rate', () => {
+    it('lets every player shift its pitch with its rate', async () => {
+      renderHook(() => useAudioPool('sound.wav', { poolSize: 2 }))
+      await flush()
+
+      playersFor().forEach((player) => expect(player.shouldCorrectPitch).toBe(false))
+    })
+
+    it('a play with no options writes no volume or rate: a new player is already at full volume and normal speed', async () => {
+      const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+      await flush()
+      const [player] = playersFor()
+
+      act(() => result.current())
+      await flush()
+
+      expect(player.volume).toBeUndefined()
+      expect(player.setPlaybackRate).not.toHaveBeenCalled()
+      expect(player.play).toHaveBeenCalledTimes(1)
+    })
+
+    it("writes a play's volume and rate before it plays", async () => {
+      const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+      await flush()
+      const [player] = playersFor()
+
+      act(() => result.current({ volume: 0.4, rate: 1.5 }))
+      await flush()
+
+      expect(player.volume).toBe(0.4)
+      expect(player.setPlaybackRate).toHaveBeenCalledWith(1.5)
+      expect(player.setPlaybackRate.mock.invocationCallOrder[0]).toBeLessThan(player.play.mock.invocationCallOrder[0])
+    })
+
+    // The rate persists per player, so a later plain play has to put it back.
+    it('rewrites a level only when it changes, including back to normal for a plain play', async () => {
+      const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+      await flush()
+      const [player] = playersFor()
+
+      act(() => result.current({ rate: 1.5 }))
+      await flush()
+      act(() => result.current({ rate: 1.5 }))
+      await flush()
+      expect(player.setPlaybackRate).toHaveBeenCalledTimes(1)
+
+      act(() => result.current())
+      await flush()
+      expect(player.setPlaybackRate).toHaveBeenCalledTimes(2)
+      expect(player.setPlaybackRate).toHaveBeenLastCalledWith(1)
+    })
+
+    it('clamps the volume to 0-1 and the rate to 0.5-2', async () => {
+      const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 2 }))
+      await flush()
+      const [first, second] = playersFor()
+
+      act(() => {
+        result.current({ volume: 3, rate: 5 })
+        result.current({ volume: -1, rate: 0.1 })
+      })
+      await flush()
+
+      expect(first.volume).toBeUndefined() // 3 clamps to 1, which the player already has
+      expect(first.setPlaybackRate).toHaveBeenCalledWith(2)
+      expect(second.volume).toBe(0)
+      expect(second.setPlaybackRate).toHaveBeenCalledWith(0.5)
+    })
+
+    it('plays a press event handed to it (onPress={play}) as a plain play', async () => {
+      const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+      await flush()
+      const [player] = playersFor()
+      const play = result.current as unknown as (event: unknown) => void
+
+      act(() => play({ nativeEvent: { pageX: 10 }, type: 'press' }))
+      await flush()
+
+      expect(player.play).toHaveBeenCalledTimes(1)
+      expect(player.volume).toBeUndefined()
+      expect(player.setPlaybackRate).not.toHaveBeenCalled()
+    })
   })
 
   describe('audio session configuration', () => {

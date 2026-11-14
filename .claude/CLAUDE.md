@@ -14,7 +14,7 @@ Part of the `@rific` package ecosystem. Published at https://www.npmjs.com/packa
 npm run lint         # ESLint check
 npm run fix           # Auto-fix lint issues
 npm run typecheck    # TypeScript type check (tsc --noEmit)
-npm test             # Jest (188 tests)
+npm test             # Jest (217 tests)
 npm run test:watch   # Jest in watch mode
 npm run build        # tsup, outputs CJS + ESM + types to dist/ (two entries: index.ts, audio/index.ts)
 npm run build:watch  # tsup in watch mode
@@ -41,10 +41,16 @@ npm run release:major   # npm version major && git push --follow-tags
 src/
   index.ts                    - main public exports (Provider, hooks, wrapper components, redux slices)
   audio/
-    index.ts                  - public exports for the optional `./audio` subpath (useAudioPool, useGatedAudioPool)
-    useAudioPool.ts            - round-robins presses across a small pool of expo-audio AudioPlayers so a fast repeat press never races a still-playing seekTo/play; each player rewinds when its clip finishes (`playbackStatusUpdate`'s `didJustFinish`), so a trigger on a rewound player only calls `play()` (a seek on every trigger resolved at uneven times and made a steady run of triggers sound uneven; Solitaire's deal beat, 2026-10-17); `expo-modules-core` is a devDependency only so `AudioPlayer`'s `addListener` (from expo-modules-core's `SharedObject`) type-checks; lazily configures the shared (process-wide) audio session on first mount as `{ interruptionMode: 'mixWithOthers', playsInSilentMode: false }` (iOS `.ambient`: mixes with the user's music and is muted by the Ring/Silent switch)
+    index.ts                  - public exports for the optional `./audio` subpath (useAudioPool, useGatedAudioPool, useLoopingAudio, useGatedLoopingAudio, useMusic, PlayOptions/PlayAudio, the rate bounds and loop timings)
+    audioLevel.ts              - PlayOptions/PlayAudio, clampVolume/clampRate (0-1, 0.5-2: iOS caps the rate at 2), readPlayOptions (defensive, so `onPress={play}`'s event object plays as a plain play), and applyLevel, which writes a player's volume and rate only when they differ from what it last wrote; players are made with `shouldCorrectPitch = false` so the rate moves the pitch (varispeed on iOS, the pitch follows speed on Android, `preservesPitch` false on the web)
+    audioSession.ts            - the process-wide audio session setup every pool and loop shares (prepareAudioSession, first caller wins, `configureAudioSession: false` opts the whole process out), and the test-only reset
+    useLoopingAudio.ts         - one looping player driven by setLevel(volume, rate?): writes at most every LEVEL_MIN_INTERVAL_MS (50) and only on a change of 0.01 or more, silence and the first sound after it never held back; volume 0 silences at once and pauses PAUSE_AFTER_SILENCE_MS (250) later; a level set before the deferred player exists applies when it does (2026-11-12, for Labyrinth's marble roll)
+    useGatedLoopingAudio.ts    - useLoopingAudio gated on useSoundSettings; turning sound off silences a playing loop even with no further setLevel
+    useMusic.ts                - useMusic(source, volume, { fadeMs }): a music track on useLoopingAudio, gated on useMusicSettings (not sound); a change of volume fades over fadeMs (MUSIC_FADE_MS, 800) in LEVEL_MIN_INTERVAL_MS steps, so two tracks swapping volumes crossfade; Music off is silence at once (2026-11-14, for HexFleet's menu and battle music)
+    useAudioPool.ts            - round-robins presses across a small pool of expo-audio AudioPlayers so a fast repeat press never races a still-playing seekTo/play; each player rewinds when its clip finishes (`playbackStatusUpdate`'s `didJustFinish`), so a trigger on a rewound player only calls `play()` (a seek on every trigger resolved at uneven times and made a steady run of triggers sound uneven; Solitaire's deal beat, 2026-10-17); each play takes `PlayOptions` (volume, rate), written in the same deferred tick before play() since a player's rate persists between plays; `expo` is a devDependency only so `AudioPlayer`'s `addListener` type-checks (expo-audio 58 takes `SharedObject` from `expo`, no longer `expo-modules-core`); lazily configures the shared (process-wide) audio session on first mount as `{ interruptionMode: 'mixWithOthers', playsInSilentMode: false }` (iOS `.ambient`: mixes with the user's music and is muted by the Ring/Silent switch)
     useGatedAudioPool.ts       - useAudioPool gated on the useSoundSettings `enabled` toggle, for gameplay SFX that play outside the button-press pipeline
-  FeedbackPressProvider.tsx    - Provider: composes HapticSettingsContext + SoundSettingsContext + PaperContext + SoundContext into one tree; useFeedbackPressContext/useFeedbackPressSoundContext read the resolved enabled flags
+  FeedbackPressProvider.tsx    - Provider: composes HapticSettingsContext + SoundSettingsContext + MusicSettingsContext + PaperContext + SoundContext into one tree; useFeedbackPressContext/useFeedbackPressSoundContext/useFeedbackPressMusicContext read the resolved enabled flags
+  MusicSettingsContext.ts      - MusicSettings type ({ enabled }), its own setting apart from sound; defaultMusicSettings is `!__DEV__` like sound's, and its React context
   HapticSettingsContext.ts     - HapticSettings type ({ vibrate }), defaultHapticSettings, and its React context
   SoundContext.ts              - SoundConfig type ({ selection?, notification? }) and its React context - the ambient app-supplied sound callbacks
   SoundSettingsContext.ts      - SoundSettings type ({ enabled }); defaultSoundSettings is `!__DEV__` (sound muted in dev/simulator by default), and its React context
@@ -52,6 +58,7 @@ src/
   useFeedbackHandlers.ts       - core wiring hook: maps a FeedbackWiring config onto a component's own event props (selection fires on touch-down, notification on long-press); implements `exclusive` mode (defers selection to onPressOut so only one of selection/notification ever fires per gesture) and strips the reserved soundDisabled/hapticDisabled/sound/exclusive props before they reach the underlying component
   useHapticSettings.ts         - useContext(HapticSettingsContext) wrapper
   useSoundSettings.ts          - useContext(SoundSettingsContext) wrapper
+  useMusicSettings.ts          - useContext(MusicSettingsContext) wrapper
   useVibration.ts              - low-level haptic primitives (selection/notification/short/medium/long/double/custom + force* variants that ignore the enabled toggle); iOS uses expo-haptics, Android falls back to Vibration.vibrate
   useHoldToRepeat.ts           - useHoldToRepeat / useHoldToRepeatByKey: setInterval-based repeat-while-held hooks with stale-closure-safe refs (latestAction/latestPulse) and idempotent start/stop
   withFeedback.tsx             - HOC escape hatch: wraps any component with useFeedbackHandlers wiring, for components this package doesn't ship a wrapper for
@@ -83,20 +90,21 @@ src/
     react-native.ts              - jest manual mock: View/Text/Image/Pressable/Switch/Touchable*, Platform (OS: 'ios'), Vibration.vibrate, StyleSheet passthrough
     react-native-paper.ts         - jest manual mock: every Paper component this package wraps, as jest.fn() stubs that capture props for assertions
     expo-haptics.ts               - jest manual mock: selectionAsync/notificationAsync/impactAsync + ImpactFeedbackStyle/NotificationFeedbackType enums
-    expo-audio.ts                 - jest manual mock: useAudioPlayer/createAudioPlayer/setAudioModeAsync stubs
+    expo-audio.ts                 - jest manual mock: useAudioPlayer/createAudioPlayer (play/pause/seekTo/setPlaybackRate/remove/addListener; volume, loop and shouldCorrectPitch are plain properties a test reads back)/setAudioModeAsync stubs
 ```
 
 ## Public API
 
 `src/index.ts` (default entry):
-- `FeedbackPressProvider` / `FeedbackPressProviderProps`: composes haptic settings, sound settings, and the optional injected Paper module for the whole tree; props are `children`, `initialValue`, `onChange`, `paper`, `sound`, `soundInitialValue`, `onSoundChange`
+- `FeedbackPressProvider` / `FeedbackPressProviderProps`: composes haptic settings, sound settings, and the optional injected Paper module for the whole tree; props are `children`, `initialValue`, `onChange`, `paper`, `sound`, `soundInitialValue`, `onSoundChange`, `musicInitialValue`, `onMusicChange`
 - `HapticSettings`, `defaultHapticSettings`, `HapticSettingsContext`: the `{ vibrate }` settings shape and its context
 - `SoundConfig`, `SoundContext`: ambient `{ selection?, notification? }` sound callbacks and their context
 - `SoundSettings`, `defaultSoundSettings`, `SoundSettingsContext`: the `{ enabled }` sound-toggle shape (defaults to `!__DEV__`) and its context
+- `MusicSettings`, `defaultMusicSettings`, `MusicSettingsContext`: the same for music, a setting of its own
 - `PaperModuleShape`, `useFeedbackPressPaper()`: the injected-Paper-module type and the hook that reads it
-- `hapticActions`, `hapticReducer` / `soundActions`, `soundReducer`: standalone Redux-shaped reducers for each settings object
+- `hapticActions`, `hapticReducer` / `soundActions`, `soundReducer` / `musicActions`, `musicReducer`: standalone Redux-shaped reducers for each settings object
 - `FeedbackTrigger`, `FeedbackWiring`, `FeedbackWiringEntry`, `PRESS_WIRING`, `useFeedbackHandlers(props, wiring?)`: the core event-wiring hook and its types
-- `useHapticSettings()` / `useSoundSettings()`: read the current settings + setter from context
+- `useHapticSettings()` / `useSoundSettings()` / `useMusicSettings()`: read the current settings + setter from context
 - `HoldToRepeatOptions`, `useHoldToRepeat(action, repeatMs, options?)`, `useHoldToRepeatByKey(action, repeatMs, options?)`: repeat-while-held hooks
 - `useVibration()`: low-level haptic primitives (`selection`, `notification`, `short`/`medium`/`long`/`double`/`custom`, and `force*` variants that bypass the enabled toggle)
 - `withFeedback(Component, wiring?)`: HOC that wires feedback handlers onto an arbitrary component
@@ -104,8 +112,11 @@ src/
 - Paper wrappers (render real Paper components when `paper` is injected, a plain-RN fallback otherwise): `AppbarAction`, `AppbarBackAction`, `Button`, `Card` (with `.Content`/`.Title`/`.Actions`/`.Cover`), `Checkbox`, `Chip`, `FAB`, `IconButton`, `SegmentedButtons`, `Switch`, `TouchableRipple`, each with a matching `*Props` type
 
 `src/audio/index.ts` (`@rific/feedback-press/audio` subpath):
-- `AudioPoolOptions`, `useAudioPool(source, options?)`: pooled expo-audio playback hook that returns a single `() => void` trigger function
+- `AudioPoolOptions`, `useAudioPool(source, options?)`: pooled expo-audio playback hook that returns a single `PlayAudio` trigger, `(options?: PlayOptions) => void`
 - `useGatedAudioPool(source, options?)`: the same, but a no-op while the sound setting is off
+- `PlayOptions` (`volume` 0-1, `rate` 0.5-2), `PlayAudio`, `MIN_PLAYBACK_RATE`, `MAX_PLAYBACK_RATE`
+- `LoopingAudioOptions`, `LoopingAudio` (`setLevel(volume, rate?)`), `useLoopingAudio(source, options?)`, `useGatedLoopingAudio(source, options?)`, `LEVEL_MIN_INTERVAL_MS`, `PAUSE_AFTER_SILENCE_MS`
+- `MusicOptions`, `useMusic(source, volume, options?)`, `MUSIC_FADE_MS`: a music track gated on the Music setting, fading between volumes
 
 ## Peer Dependencies
 
@@ -119,7 +130,7 @@ src/
 
 - Framework: Jest + ts-jest (via `@infinitetoken/jest-config/react-native`), jsdom environment
 - Mocks in `src/__mocks__/` for `react-native`, `react-native-paper`, `expo-haptics`, `expo-audio`
-- 188 tests across 16 suites in `src/__tests__/`
+- 217 tests across 19 suites in `src/__tests__/`
 - Coverage clears the fleet's 70%×4 default with real margin - measured 94.97/83.15/92.3/96.63% (statements/branches/functions/lines) as of 2026-08-30; no local `coverageThreshold` override
 
 ## `hitSlop` on icon buttons (2026-10-15)

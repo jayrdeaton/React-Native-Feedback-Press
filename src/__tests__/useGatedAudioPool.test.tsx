@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import * as audio from 'expo-audio'
 import React from 'react'
 
-import { __resetAudioSessionConfiguredForTests } from '../audio/useAudioPool'
+import { __resetAudioSessionConfiguredForTests } from '../audio/audioSession'
 import { useGatedAudioPool } from '../audio/useGatedAudioPool'
 import { FeedbackPressProvider } from '../FeedbackPressProvider'
 import { useSoundSettings } from '../useSoundSettings'

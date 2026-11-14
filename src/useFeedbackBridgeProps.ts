@@ -43,6 +43,6 @@ export type FeedbackBridgeProps = Omit<FeedbackPressProviderProps, 'children' | 
  * apps, a shared `useDefaultSounds()` hook in others) and passes just the results in.
  */
 export function useFeedbackBridgeProps(props: FeedbackBridgeProps): FeedbackBridgeProps {
-  const { initialValue, onChange, soundInitialValue, onSoundChange, sound } = props
-  return useMemo(() => ({ initialValue, onChange, soundInitialValue, onSoundChange, sound }), [initialValue, onChange, soundInitialValue, onSoundChange, sound])
+  const { initialValue, onChange, soundInitialValue, onSoundChange, sound, musicInitialValue, onMusicChange } = props
+  return useMemo(() => ({ initialValue, onChange, soundInitialValue, onSoundChange, sound, musicInitialValue, onMusicChange }), [initialValue, onChange, soundInitialValue, onSoundChange, sound, musicInitialValue, onMusicChange])
 }

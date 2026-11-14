@@ -167,6 +167,8 @@ The other Paper wrappers (`Button`, `Chip`, `FAB`, `TouchableRipple`, `Checkbox`
 | `sound` | `SoundConfig` | - | Fires an app-supplied callback alongside each haptic. See [Sound feedback](#sound-feedback). |
 | `soundInitialValue` | `Partial<SoundSettings>` | `defaultSoundSettings` | Initial sound settings. Merged with defaults, partial is fine. |
 | `onSoundChange` | `(settings: SoundSettings) => void` | - | Called with the full sound settings object whenever sound settings change. |
+| `musicInitialValue` | `Partial<MusicSettings>` | `defaultMusicSettings` | Initial music settings, separate from sound. See [`useMusic`](#usemusic). |
+| `onMusicChange` | `(settings: MusicSettings) => void` | - | Called with the full music settings object whenever music settings change. |
 | `children` | `ReactNode` | - | |
 
 ```ts
@@ -377,6 +379,58 @@ const playGoalHorn = useGatedAudioPool(require('./assets/goal.wav'))
 
 Same signature and `options` (`poolSize`, `configureAudioSession`) as `useAudioPool` - call once per clip, same as its ungated sibling.
 
+#### Volume and rate per play
+
+Every play function from `useAudioPool` and `useGatedAudioPool` takes optional `PlayOptions`: `volume` (0 to 1) and `rate` (0.5 to 2, clamped; iOS caps it at 2). The rate moves the pitch with it, like a tape played faster or slower, on iOS, Android and the web alike. Use them for an impact that's louder the harder it lands, or a clip pitched slightly differently each time so a repeated sound doesn't grate:
+
+```tsx
+const playKnock = useGatedAudioPool(require('./assets/knock.wav'), { poolSize: 6 })
+
+playKnock({ volume: Math.min(1, impactSpeed / 8), rate: 0.95 + Math.random() * 0.1 })
+playKnock() // full volume, normal speed
+```
+
+A player's rate persists between plays, so the pool writes the level on every play, and only when it differs from that player's last one (an unchanged level costs no native call). A play function handed straight to an event prop (`onPress={playKnock}`) still plays at full volume and normal speed: the event object is ignored. Note that iOS Safari ignores a web page's volume entirely (Apple leaves it to the hardware buttons), so on the web there the rate still applies but every play is at full volume.
+
+#### `useLoopingAudio` and `useGatedLoopingAudio`
+
+For a sound that runs continuously and follows the game (a ball's roll, an engine, wind): one looping player whose volume and rate the caller drives with `setLevel(volume, rate?)`.
+
+```tsx
+import { useGatedLoopingAudio } from '@rific/feedback-press/audio'
+
+const roll = useGatedLoopingAudio(require('./assets/roll.wav'))
+
+// Every frame:
+const t = Math.min(1, speed / maxSpeed)
+roll.setLevel(speed < 0.15 ? 0 : t ** 0.7, 0.8 + 0.8 * t)
+// When the game pauses:
+roll.setLevel(0)
+```
+
+- It's built like a pool's players (a tick after mount, the shared audio session configured first unless `configureAudioSession: false`), and starts silent and paused. A level set before the player exists is applied as soon as it does.
+- `setLevel` is made to be called every frame: a changing level reaches the player at most every `LEVEL_MIN_INTERVAL_MS` (50), and only when it moved by a hundredth or more, so it costs a native call a few times a second, not 60 or 120. Silence, and the first sound after it, are never held back.
+- A volume of 0 silences the loop at once and pauses it `PAUSE_AFTER_SILENCE_MS` (250) later, so a level that dips to 0 and straight back only touches the volume, never `pause()` and `play()`.
+- `useGatedLoopingAudio` is the same, gated on `useSoundSettings`: every level is silence while sound is off, and turning sound off silences a playing loop even if its caller has stopped setting levels (a paused game whose settings are open).
+- Make the clip loop seamlessly (its end flowing into its start); a looping clip is played end to end and restarted, and iOS can leave a tiny gap at the join.
+
+#### `useMusic`
+
+A game's music: a looping track that plays while the **Music** setting is on. Music is its own setting, apart from Sound, so a player can keep the sound effects and turn the music off, or the other way round (`useMusicSettings`, `musicReducer`/`musicActions`, and the provider's `musicInitialValue`/`onMusicChange`, all shaped like their sound counterparts; off by default in dev builds, like Sound).
+
+```tsx
+import { useMusic } from '@rific/feedback-press/audio'
+
+// One track per piece of music, each at 0 while another plays: a change of volume fades
+// (MUSIC_FADE_MS, 800 ms, by default), so switching screens crossfades
+const inBattle = pathname === '/game'
+useMusic(require('./assets/sounds/music-menu.wav'), inBattle ? 0 : 0.35)
+useMusic(require('./assets/sounds/music-battle.wav'), inBattle ? 0.35 : 0, { fadeMs: 1200 })
+```
+
+- Built on `useLoopingAudio`: a track at 0 pauses once it has faded out and picks up where it left off.
+- Turning Music off silences every track at once; turning it back on fades them in.
+
 ### `useSoundSettings`
 
 A global sound-enabled toggle, analogous to `useHapticSettings` for vibration. When `enabled` is `false`, every `sound` callback (provider-wide and per-instance) is suppressed regardless of `soundDisabled`; haptics are unaffected.
@@ -438,6 +492,8 @@ export function App() {
 ```
 
 Available actions: `soundActions.initialize(settings)` (replace all), `soundActions.setEnabled(boolean)`.
+
+Music is the same again: `musicReducer` (mount it as `music`), `musicActions.initialize(settings)`, `musicActions.setEnabled(boolean)`, bridged through `musicInitialValue`/`onMusicChange`, and read with `useMusicSettings()`.
 
 ### `useFeedbackBridgeProps`: bridging both Redux slices at once
 
