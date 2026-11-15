@@ -14,7 +14,7 @@ Part of the `@rific` package ecosystem. Published at https://www.npmjs.com/packa
 npm run lint         # ESLint check
 npm run fix           # Auto-fix lint issues
 npm run typecheck    # TypeScript type check (tsc --noEmit)
-npm test             # Jest (217 tests)
+npm test             # Jest (218 tests)
 npm run test:watch   # Jest in watch mode
 npm run build        # tsup, outputs CJS + ESM + types to dist/ (two entries: index.ts, audio/index.ts)
 npm run build:watch  # tsup in watch mode
@@ -47,7 +47,7 @@ src/
     useLoopingAudio.ts         - one looping player driven by setLevel(volume, rate?): writes at most every LEVEL_MIN_INTERVAL_MS (50) and only on a change of 0.01 or more, silence and the first sound after it never held back; volume 0 silences at once and pauses PAUSE_AFTER_SILENCE_MS (250) later; a level set before the deferred player exists applies when it does (2026-11-12, for Labyrinth's marble roll)
     useGatedLoopingAudio.ts    - useLoopingAudio gated on useSoundSettings; turning sound off silences a playing loop even with no further setLevel
     useMusic.ts                - useMusic(source, volume, { fadeMs }): a music track on useLoopingAudio, gated on useMusicSettings (not sound); a change of volume fades over fadeMs (MUSIC_FADE_MS, 800) in LEVEL_MIN_INTERVAL_MS steps, so two tracks swapping volumes crossfade; Music off is silence at once (2026-11-14, for HexFleet's menu and battle music)
-    useAudioPool.ts            - round-robins presses across a small pool of expo-audio AudioPlayers so a fast repeat press never races a still-playing seekTo/play; each player rewinds when its clip finishes (`playbackStatusUpdate`'s `didJustFinish`), so a trigger on a rewound player only calls `play()` (a seek on every trigger resolved at uneven times and made a steady run of triggers sound uneven; Solitaire's deal beat, 2026-10-17); each play takes `PlayOptions` (volume, rate), written in the same deferred tick before play() since a player's rate persists between plays; `expo` is a devDependency only so `AudioPlayer`'s `addListener` type-checks (expo-audio 58 takes `SharedObject` from `expo`, no longer `expo-modules-core`); lazily configures the shared (process-wide) audio session on first mount as `{ interruptionMode: 'mixWithOthers', playsInSilentMode: false }` (iOS `.ambient`: mixes with the user's music and is muted by the Ring/Silent switch)
+    useAudioPool.ts            - round-robins presses across a small pool of expo-audio AudioPlayers so a fast repeat press never races a still-playing seekTo/play; each player rewinds when its clip finishes (`playbackStatusUpdate`'s `didJustFinish`), pausing before the seek because Android's ExoPlayer stays playWhenReady at a clip's end and a bare `seekTo(0)` restarts it, looping every pooled player forever (found on an Android device 2026-11-14), so a trigger on a rewound player only calls `play()` (a seek on every trigger resolved at uneven times and made a steady run of triggers sound uneven; Solitaire's deal beat, 2026-10-17); each play takes `PlayOptions` (volume, rate), written in the same deferred tick before play() since a player's rate persists between plays; `expo` is a devDependency only so `AudioPlayer`'s `addListener` type-checks (expo-audio 58 takes `SharedObject` from `expo`, no longer `expo-modules-core`); lazily configures the shared (process-wide) audio session on first mount as `{ interruptionMode: 'mixWithOthers', playsInSilentMode: false }` (iOS `.ambient`: mixes with the user's music and is muted by the Ring/Silent switch)
     useGatedAudioPool.ts       - useAudioPool gated on the useSoundSettings `enabled` toggle, for gameplay SFX that play outside the button-press pipeline
   FeedbackPressProvider.tsx    - Provider: composes HapticSettingsContext + SoundSettingsContext + MusicSettingsContext + PaperContext + SoundContext into one tree; useFeedbackPressContext/useFeedbackPressSoundContext/useFeedbackPressMusicContext read the resolved enabled flags
   MusicSettingsContext.ts      - MusicSettings type ({ enabled }), its own setting apart from sound; defaultMusicSettings is `!__DEV__` like sound's, and its React context
@@ -130,7 +130,7 @@ src/
 
 - Framework: Jest + ts-jest (via `@infinitetoken/jest-config/react-native`), jsdom environment
 - Mocks in `src/__mocks__/` for `react-native`, `react-native-paper`, `expo-haptics`, `expo-audio`
-- 217 tests across 19 suites in `src/__tests__/`
+- 218 tests across 19 suites in `src/__tests__/`
 - Coverage clears the fleet's 70%×4 default with real margin - measured 94.97/83.15/92.3/96.63% (statements/branches/functions/lines) as of 2026-08-30; no local `coverageThreshold` override
 
 ## `hitSlop` on icon buttons (2026-10-15)

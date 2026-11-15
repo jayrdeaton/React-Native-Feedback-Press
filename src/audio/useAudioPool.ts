@@ -57,8 +57,15 @@ type PooledPlayer = LevelledPlayer & {
 // (AVPlayer's completion handler, then the bridge back to JS), so a steady run of triggers - a card
 // deal's beat - came out as uneven sounds. Done here, after the clip, it is long finished by the time
 // the round robin comes back to this player.
+//
+// It pauses before it seeks. On Android a finished clip is still playing as far as the player knows:
+// expo-audio's ExoPlayer stays playWhenReady at its end, so a bare seekTo(0) starts the clip over, it
+// finishes again, rewinds again, and every player that ever played loops for good (Android, 2026-11-14:
+// noise that never stopped, even with Sound turned off). iOS and the web already stop at the end, so
+// there the pause changes nothing.
 function rewind(entry: PooledPlayer) {
   const plays = entry.plays
+  entry.player.pause()
   void entry.player.seekTo(0).then(() => {
     if (entry.plays === plays) entry.atStart = true
   })

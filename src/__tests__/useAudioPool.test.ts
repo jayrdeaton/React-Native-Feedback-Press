@@ -115,6 +115,22 @@ describe('useAudioPool', () => {
     expect(player.seekTo).toHaveBeenCalledTimes(1) // the trigger itself did not seek
   })
 
+  // Android's ExoPlayer stays playWhenReady at the end of a clip, so a seek on its own starts it over: the clip finishes,
+  // rewinds, plays again and never stops. The rewind has to pause first.
+  it('pauses a finished player before rewinding it, so the rewind does not start the clip over', async () => {
+    const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
+    await flush()
+    const [player] = playersFor()
+
+    act(() => result.current())
+    await flush()
+    await act(async () => finish(player))
+
+    expect(player.pause).toHaveBeenCalledTimes(1)
+    expect(player.pause.mock.invocationCallOrder[0]).toBeLessThan(player.seekTo.mock.invocationCallOrder[0])
+    expect(player.play).toHaveBeenCalledTimes(1)
+  })
+
   it('seeks to 0 before playing a player that has not rewound yet, so a retriggered clip restarts instead of resuming', async () => {
     const { result } = renderHook(() => useAudioPool('sound.wav', { poolSize: 1 }))
     await flush()
