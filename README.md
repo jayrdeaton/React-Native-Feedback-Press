@@ -259,7 +259,7 @@ const {
 
 All methods respect the `FeedbackPressProvider` `enabled` flag. The `force*` variants bypass it: use them for feedback that should always fire (error states, destructive confirmations).
 
-On iOS, methods use `expo-haptics` native APIs. On Android, they fall back to `Vibration.vibrate()` with mapped durations.
+On iOS, methods use `expo-haptics` native APIs. On Android, they play Android's own haptic effects through `expo-haptics`' `performAndroidHapticsAsync` (`selection` and `short` a clock tick, `medium` a key click, `long` a long press, `notification` Confirm for a success and Reject for a warning or an error, Android 11 and later, a key click or a long press before it), the crisp ticks Android's keyboard uses, which follow the phone's touch feedback setting and need no `VIBRATE` permission. Only a `custom` or `force` duration over 400ms still runs the motor for that long, with `Vibration.vibrate()`, on both platforms.
 
 ## `useHoldToRepeat`
 
@@ -579,5 +579,5 @@ export function App() {
 ## Platform notes
 
 - **iOS**: uses `expo-haptics` (`selectionAsync`, `notificationAsync`, `impactAsync`)
-- **Android**: falls back to `Vibration.vibrate()` with duration mapping
+- **Android**: uses `expo-haptics`' `performAndroidHapticsAsync` (Android's own haptic effects, see `useVibration`); `Vibration.vibrate()` only for a duration over 400ms
 - **Web**: haptics are no-ops (expo-haptics returns silently). `hitSlop` is a no-op too: react-native-web ignores it on every component, so an icon button's target on web is its own box.

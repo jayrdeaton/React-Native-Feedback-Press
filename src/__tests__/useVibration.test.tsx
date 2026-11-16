@@ -83,26 +83,133 @@ describe('useVibration (iOS)', () => {
 })
 
 describe('useVibration (Android)', () => {
+  // Every haptic is one of Android's own effects (expo-haptics' performAndroidHapticsAsync), never a timed buzz of the motor.
+  const performed = () => mockedHaptics.performAndroidHapticsAsync.mock.calls.map(([type]) => type)
+
   beforeEach(() => {
     Object.defineProperty(Platform, 'OS', { value: 'android', configurable: true })
+    Object.defineProperty(Platform, 'Version', { value: 35, configurable: true })
   })
 
-  it('selection() calls Vibration.vibrate', () => {
+  afterAll(() => {
+    Object.defineProperty(Platform, 'Version', { value: undefined, configurable: true })
+  })
+
+  it('selection() plays a tick', () => {
     const { result } = renderHook(() => useVibration(), { wrapper })
     act(() => {
       result.current.selection()
     })
-    expect(mockedVibration.vibrate).toHaveBeenCalled()
+    expect(performed()).toEqual([haptics.AndroidHaptics.Clock_Tick])
+    expect(mockedVibration.vibrate).not.toHaveBeenCalled()
     expect(mockedHaptics.selectionAsync).not.toHaveBeenCalled()
   })
 
-  it('short() calls Vibration.vibrate', () => {
+  it('short(), medium() and long() play a tick, a key click and a long press', () => {
     const { result } = renderHook(() => useVibration(), { wrapper })
     act(() => {
       result.current.short()
+      result.current.medium()
+      result.current.long()
     })
-    expect(mockedVibration.vibrate).toHaveBeenCalled()
+    expect(performed()).toEqual([haptics.AndroidHaptics.Clock_Tick, haptics.AndroidHaptics.Virtual_Key, haptics.AndroidHaptics.Long_Press])
+    expect(mockedVibration.vibrate).not.toHaveBeenCalled()
     expect(mockedHaptics.impactAsync).not.toHaveBeenCalled()
+  })
+
+  it('force() with no duration is a selection, as on iOS', () => {
+    const { result } = renderHook(() => useVibration(), { wrapper: disabledWrapper })
+    act(() => {
+      result.current.force()
+    })
+    expect(performed()).toEqual([haptics.AndroidHaptics.Clock_Tick])
+    expect(mockedVibration.vibrate).not.toHaveBeenCalled()
+  })
+
+  it('a duration longer than any haptic still vibrates for that long', () => {
+    const { result } = renderHook(() => useVibration(), { wrapper })
+    act(() => {
+      result.current.custom(800)
+    })
+    expect(mockedVibration.vibrate).toHaveBeenCalledWith(800)
+    expect(performed()).toEqual([])
+  })
+
+  it('notification() confirms a success and rejects a warning or an error', () => {
+    const { result } = renderHook(() => useVibration(), { wrapper })
+    act(() => {
+      result.current.notification()
+      result.current.notification(haptics.NotificationFeedbackType.Warning)
+      result.current.notification(haptics.NotificationFeedbackType.Error)
+    })
+    expect(performed()).toEqual([haptics.AndroidHaptics.Confirm, haptics.AndroidHaptics.Reject, haptics.AndroidHaptics.Reject])
+    expect(mockedHaptics.notificationAsync).not.toHaveBeenCalled()
+    expect(mockedVibration.vibrate).not.toHaveBeenCalled()
+  })
+
+  it('notification() falls back to effects every Android has before Android 11', () => {
+    Object.defineProperty(Platform, 'Version', { value: 29, configurable: true })
+    const { result } = renderHook(() => useVibration(), { wrapper })
+    act(() => {
+      result.current.notification()
+      result.current.notification(haptics.NotificationFeedbackType.Error)
+    })
+    expect(performed()).toEqual([haptics.AndroidHaptics.Virtual_Key, haptics.AndroidHaptics.Long_Press])
+  })
+
+  it('double() rejects, then confirms after the gap', () => {
+    jest.useFakeTimers()
+    const { result } = renderHook(() => useVibration(), { wrapper })
+    act(() => {
+      result.current.double()
+    })
+    expect(performed()).toEqual([haptics.AndroidHaptics.Reject])
+    act(() => {
+      jest.runAllTimers()
+    })
+    expect(performed()).toEqual([haptics.AndroidHaptics.Reject, haptics.AndroidHaptics.Confirm])
+    expect(mockedVibration.vibrate).not.toHaveBeenCalled()
+    jest.useRealTimers()
+  })
+
+  it('a haptic the phone cannot play is caught, not left an unhandled rejection', async () => {
+    const failed = Promise.reject(new Error('unsupported'))
+    const caught = jest.spyOn(failed, 'catch')
+    mockedHaptics.performAndroidHapticsAsync.mockReturnValueOnce(failed)
+    const { result } = renderHook(() => useVibration(), { wrapper })
+    act(() => {
+      result.current.selection()
+    })
+    expect(caught).toHaveBeenCalledTimes(1)
+    await expect(caught.mock.results[0].value).resolves.toBeUndefined()
+  })
+
+  it('does nothing when disabled', () => {
+    const { result } = renderHook(() => useVibration(), { wrapper: disabledWrapper })
+    act(() => {
+      result.current.selection()
+      result.current.notification()
+      result.current.short()
+      result.current.double()
+    })
+    expect(performed()).toEqual([])
+    expect(mockedVibration.vibrate).not.toHaveBeenCalled()
+  })
+})
+
+describe('useVibration (web)', () => {
+  beforeEach(() => {
+    Object.defineProperty(Platform, 'OS', { value: 'web', configurable: true })
+  })
+
+  it('selection() and short() still use the Vibration API', () => {
+    const { result } = renderHook(() => useVibration(), { wrapper })
+    act(() => {
+      result.current.selection()
+      result.current.short()
+    })
+    expect(mockedVibration.vibrate.mock.calls).toEqual([[30], [50]])
+    expect(mockedHaptics.performAndroidHapticsAsync).not.toHaveBeenCalled()
   })
 })
 

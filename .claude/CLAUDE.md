@@ -59,7 +59,7 @@ src/
   useHapticSettings.ts         - useContext(HapticSettingsContext) wrapper
   useSoundSettings.ts          - useContext(SoundSettingsContext) wrapper
   useMusicSettings.ts          - useContext(MusicSettingsContext) wrapper
-  useVibration.ts              - low-level haptic primitives (selection/notification/short/medium/long/double/custom + force* variants that ignore the enabled toggle); iOS uses expo-haptics, Android falls back to Vibration.vibrate
+  useVibration.ts              - low-level haptic primitives (selection/notification/short/medium/long/double/custom + force* variants that ignore the enabled toggle); iOS uses expo-haptics' selection/impact/notification; Android uses expo-haptics' performAndroidHapticsAsync (Android's own View haptic effects: selection and a light impact Clock_Tick, medium Virtual_Key, heavy Long_Press, a success Confirm and a warning or an error Reject on API 30+, Virtual_Key/Long_Press below it, picked from Platform.Version since expo-haptics rejects an effect the API level lacks; every call's promise is caught). Until 2026-11-16 Android ran the motor for a fixed time through RN's Vibration (30ms a selection, 120ms a notification), a dull buzz that blurred into one rumble when a card game fired a dozen a second (CardTastic's deals). Both platforms still use Vibration.vibrate for a duration over 400ms, and the web for everything
   useHoldToRepeat.ts           - useHoldToRepeat / useHoldToRepeatByKey: setInterval-based repeat-while-held hooks with stale-closure-safe refs (latestAction/latestPulse) and idempotent start/stop
   withFeedback.tsx             - HOC escape hatch: wraps any component with useFeedbackHandlers wiring, for components this package doesn't ship a wrapper for
   globals.d.ts                 - declares the `__DEV__` global (not pulled from @types/react-native since this package's tsconfig doesn't include react-native's own types)
@@ -89,7 +89,7 @@ src/
   __mocks__/
     react-native.ts              - jest manual mock: View/Text/Image/Pressable/Switch/Touchable*, Platform (OS: 'ios'), Vibration.vibrate, StyleSheet passthrough
     react-native-paper.ts         - jest manual mock: every Paper component this package wraps, as jest.fn() stubs that capture props for assertions
-    expo-haptics.ts               - jest manual mock: selectionAsync/notificationAsync/impactAsync + ImpactFeedbackStyle/NotificationFeedbackType enums
+    expo-haptics.ts               - jest manual mock: selectionAsync/notificationAsync/impactAsync, performAndroidHapticsAsync (resolves) + ImpactFeedbackStyle/NotificationFeedbackType/AndroidHaptics enums (AndroidHaptics only the five effects used)
     expo-audio.ts                 - jest manual mock: useAudioPlayer/createAudioPlayer (play/pause/seekTo/setPlaybackRate/remove/addListener; volume, loop and shouldCorrectPitch are plain properties a test reads back)/setAudioModeAsync stubs
 ```
 
@@ -122,7 +122,7 @@ src/
 
 - `react` (required, >=19.0.0)
 - `react-native` (required, >=0.76.0)
-- `expo-haptics` (required, >=56.0.0) - drives `useVibration`'s iOS haptics
+- `expo-haptics` (required, >=56.0.0) - drives `useVibration`'s iOS and Android haptics
 - `expo-audio` (optional, >=56.0.0) - only needed for the `./audio` subpath's `useAudioPool`
 - `react-native-paper` (optional, >=5.0.0) - only needed to render the real Paper look; never auto-detected, injected explicitly via `<FeedbackPressProvider paper={...}>`, and every Paper wrapper renders a working plain-RN fallback when it's omitted
 
