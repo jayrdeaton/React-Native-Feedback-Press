@@ -585,3 +585,7 @@ export function App() {
 - **iOS**: uses `expo-haptics` (`selectionAsync`, `notificationAsync`, `impactAsync`)
 - **Android**: uses `expo-haptics`' `performAndroidHapticsAsync` (Android's own haptic effects, see `useVibration`); `Vibration.vibrate()` only for a duration over 400ms
 - **Web**: haptics are no-ops (expo-haptics returns silently). `hitSlop` is a no-op too: react-native-web ignores it on every component, so an icon button's target on web is its own box.
+
+---
+
+Made by [Infinite Token](https://www.infinitetoken.com), the team behind [Lumber](https://lumber.infinitetoken.com): end-to-end encrypted logging.
