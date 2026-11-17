@@ -14,7 +14,7 @@ npm install @rific/feedback-press
 
 ```sh
 # Required
-npm install expo-haptics
+npm install @rific/core expo-haptics
 
 # Optional, only needed to render the real Paper look
 npm install react-native-paper
@@ -110,6 +110,8 @@ const FeedbackToggle = withFeedback(SomeToggle, { onValueChange: 'selection' })
 const FeedbackFAB = withFeedback(SomeFAB, { onPress: 'selection', onLongPress: 'notification' })
 ```
 
+The default map is exported as `PRESS_WIRING` (`{ onPressIn: { event: 'selection', activeWhen: ['onPress', 'onLongPress'] }, onLongPress: { event: 'notification' } }`), typed by `FeedbackWiring`. `withFeedback` is a thin wrapper around `useFeedbackHandlers(props, wiring?)`, which returns the props with the feedback wired in; call the hook yourself to wire a component you render rather than wrap. Either way the component also takes `hapticDisabled`, `soundDisabled`, `sound` and `exclusive`, as this package's own wrappers do.
+
 ## Components
 
 All components are drop-in replacements with identical prop types to their originals. The Paper wrappers render the real `react-native-paper` component when `paper` is injected into `<FeedbackPressProvider>`, and a small built-in plain-RN fallback (not a Material Design reproduction) otherwise; see [Install](#install).
@@ -176,6 +178,8 @@ type HapticSettings = {
   vibrate: boolean  // default: true
 }
 ```
+
+The contexts behind the provider are exported too, for a test or a component of your own that reads them directly: `HapticSettingsContext`, `SoundSettingsContext` and `MusicSettingsContext` (each a `{ settings, set }` context from `@rific/core`'s `createSettingsContext`, starting from `defaultHapticSettings`, `defaultSoundSettings` and `defaultMusicSettings`), `SoundContext` (the provider's `sound` config, `{}` without one), and `useFeedbackPressPaper()`, which returns the injected `paper` module, or `null` without one.
 
 ### `useHapticSettings`
 
@@ -381,7 +385,7 @@ Same signature and `options` (`poolSize`, `configureAudioSession`) as `useAudioP
 
 #### Volume and rate per play
 
-Every play function from `useAudioPool` and `useGatedAudioPool` takes optional `PlayOptions`: `volume` (0 to 1) and `rate` (0.5 to 2, clamped; iOS caps it at 2). The rate moves the pitch with it, like a tape played faster or slower, on iOS, Android and the web alike. Use them for an impact that's louder the harder it lands, or a clip pitched slightly differently each time so a repeated sound doesn't grate:
+Every play function from `useAudioPool` and `useGatedAudioPool` takes optional `PlayOptions`: `volume` (0 to 1) and `rate` (`MIN_PLAYBACK_RATE` 0.5 to `MAX_PLAYBACK_RATE` 2, both exported from `@rific/feedback-press/audio`, clamped; iOS caps it at 2). The rate moves the pitch with it, like a tape played faster or slower, on iOS, Android and the web alike. Use them for an impact that's louder the harder it lands, or a clip pitched slightly differently each time so a repeated sound doesn't grate:
 
 ```tsx
 const playKnock = useGatedAudioPool(require('./assets/knock.wav'), { poolSize: 6 })
