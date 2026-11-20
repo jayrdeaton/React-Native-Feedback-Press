@@ -1,5 +1,6 @@
 import { type AudioSource, createAudioPlayer } from 'expo-audio'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { AppState } from 'react-native'
 
 import { applyLevel, clampRate, clampVolume, type LevelledPlayer, prepareLevelledPlayer } from './audioLevel'
 import { prepareAudioSession } from './audioSession'
@@ -30,6 +31,13 @@ const LEVEL_EPSILON = 0.01
  * (a ball brushing the speed it goes quiet at) only touches the volume, never play() and pause().
  */
 export const PAUSE_AFTER_SILENCE_MS = 250
+
+/**
+ * When a loop is checked again after the app comes back to the front, besides the moment it does:
+ * on iOS the word that a suspended app's audio session was ended arrives once the app runs again,
+ * and can come after the app is active (see `useLoopingAudio`).
+ */
+export const RESUME_CHECKS_MS = [250, 1000]
 
 type LoopPlayer = LevelledPlayer & {
   playing: boolean
@@ -67,12 +75,32 @@ function sound(loop: LoopPlayer, volume: number, rate: number, now: number) {
   loop.lastWrite = now
 }
 
+// Puts the player back in the state the loop left it in, if something else moved it: playing while
+// the loop is heard, paused once its silence has paused it.
+function resync(loop: LoopPlayer) {
+  if (loop.pauseTimer) return
+  const playing = loop.player.playing
+  if (loop.playing && !playing) loop.player.play()
+  else if (!loop.playing && playing) loop.player.pause()
+}
+
 /**
  * One looping player whose volume and rate the caller drives, for a sound that runs continuously
  * and follows the game: a ball's roll, an engine, wind. Built like `useAudioPool`'s players
  * (deferred a tick after mount, the shared audio session configured first unless opted out, the
  * session kept active), and starts silent and paused; `setLevel` does the rest. A level set before
  * the player exists is applied as soon as it does.
+ *
+ * It picks up again when the app comes back to the front. The system pauses players behind the
+ * loop's back: expo-audio pauses every player as the app goes to the background (unless the audio
+ * session plays there) and resumes them as it returns, but on iOS a suspended app's audio session is
+ * ended while it sleeps, and the interruption saying so arrives once the app runs again, often just
+ * after expo-audio has resumed its players. expo-audio pauses them for it and waits for an end that
+ * never comes, while the loop still counts itself playing, so a level above 0 only touched the
+ * volume and the loop stayed silent. So as the app becomes active, and again `RESUME_CHECKS_MS`
+ * later, a loop the system has paused while it should be heard is played again (and one it resumed
+ * while the loop is silent is paused). Only while the app is active: in the background it stays
+ * paused.
  */
 export function useLoopingAudio(source: AudioSource, options?: LoopingAudioOptions): LoopingAudio {
   const loopRef = useRef<LoopPlayer | null>(null)
@@ -101,6 +129,24 @@ export function useLoopingAudio(source: AudioSource, options?: LoopingAudioOptio
       loopRef.current = null
     }
   }, [source, options?.configureAudioSession])
+
+  useEffect(() => {
+    let checks: ReturnType<typeof setTimeout>[] = []
+    const check = () => {
+      if (loopRef.current) resync(loopRef.current)
+    }
+    const subscription = AppState.addEventListener('change', (state) => {
+      checks.forEach(clearTimeout)
+      checks = []
+      if (state !== 'active') return
+      check()
+      checks = RESUME_CHECKS_MS.map((ms) => setTimeout(check, ms))
+    })
+    return () => {
+      subscription.remove()
+      checks.forEach(clearTimeout)
+    }
+  }, [])
 
   const setLevel = useCallback((volume: number, rate?: number) => {
     // A volume that isn't a number is silence here, never full volume.

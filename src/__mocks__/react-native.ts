@@ -24,7 +24,24 @@ const Platform = {
   select: (obj: Record<string, unknown>) => obj[Platform.OS] ?? obj.default
 }
 
-export { Platform, StyleSheet, Vibration }
+// addEventListener keeps its listeners, so a test can move the app between states with
+// AppState.__setState and see what each listener does.
+type AppStateListener = (state: string) => void
+const appStateListeners = new Set<AppStateListener>()
+const AppState = {
+  currentState: 'active',
+  addEventListener: jest.fn((_type: string, listener: AppStateListener) => {
+    appStateListeners.add(listener)
+    return { remove: () => appStateListeners.delete(listener) }
+  }),
+  __setState: (state: string) => {
+    AppState.currentState = state
+    appStateListeners.forEach((listener) => listener(state))
+  },
+  __listenerCount: () => appStateListeners.size
+}
+
+export { AppState, Platform, StyleSheet, Vibration }
 
 export const View = stub
 export const Text = stub

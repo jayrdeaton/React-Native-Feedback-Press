@@ -415,6 +415,7 @@ roll.setLevel(0)
 - It's built like a pool's players (a tick after mount, the shared audio session configured first unless `configureAudioSession: false`), and starts silent and paused. A level set before the player exists is applied as soon as it does.
 - `setLevel` is made to be called every frame: a changing level reaches the player at most every `LEVEL_MIN_INTERVAL_MS` (50), and only when it moved by a hundredth or more, so it costs a native call a few times a second, not 60 or 120. Silence, and the first sound after it, are never held back.
 - A volume of 0 silences the loop at once and pauses it `PAUSE_AFTER_SILENCE_MS` (250) later, so a level that dips to 0 and straight back only touches the volume, never `pause()` and `play()`.
+- It picks up again when the app comes back to the front. The system pauses players on its own: expo-audio pauses them as the app goes to the background and resumes them as it returns, but on iOS a suspended app's audio session is ended while it sleeps, and the interruption saying so can arrive after the players were resumed, pausing them for good. So as the app becomes active, and again 250 ms and 1 s later, a loop that should be heard and isn't is played again. It stays paused while the app is in the background.
 - `useGatedLoopingAudio` is the same, gated on `useSoundSettings`: every level is silence while sound is off, and turning sound off silences a playing loop even if its caller has stopped setting levels (a paused game whose settings are open).
 - Make the clip loop seamlessly (its end flowing into its start); a looping clip is played end to end and restarted, and iOS can leave a tiny gap at the join.
 
@@ -432,7 +433,7 @@ useMusic(require('./assets/sounds/music-menu.wav'), inBattle ? 0 : 0.35)
 useMusic(require('./assets/sounds/music-battle.wav'), inBattle ? 0.35 : 0, { fadeMs: 1200 })
 ```
 
-- Built on `useLoopingAudio`: a track at 0 pauses once it has faded out and picks up where it left off.
+- Built on `useLoopingAudio`: a track at 0 pauses once it has faded out and picks up where it left off, and a track the system paused while the app was away plays again when the app comes back.
 - Turning Music off silences every track at once; turning it back on fades them in.
 
 ### `useSoundSettings`
